@@ -7,12 +7,12 @@ module Counter = {
 
   /* Function to increment the counter */
   let increment = () => {
-    counter := counter^ + 1
+    counter := counter + 1
   }
 
   /* Function to decrement the counter */
   let decrement = () => {
-    counter := counter^ - 1
+    counter := counter - 1
   }
 
   /* Function to get the current value of the counter */

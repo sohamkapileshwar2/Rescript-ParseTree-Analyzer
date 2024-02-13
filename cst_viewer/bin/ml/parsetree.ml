@@ -16,6 +16,7 @@
 (** Abstract syntax tree produced by parsing *)
 
 open Asttypes
+(* open Yojson *)
 
 type constant =
     Pconst_integer of string * char option
@@ -36,7 +37,7 @@ type constant =
      Suffixes [g-z][G-Z] are accepted by the parser.
      Suffixes are rejected by the typechecker.
   *)
-
+[@@deriving to_yojson]
 (** {1 Extension points} *)
 
 type attribute = string loc * payload
@@ -46,6 +47,7 @@ type attribute = string loc * payload
           Metadata containers passed around within the AST.
           The compiler ignores unknown attributes.
        *)
+[@@deriving to_yojson]
 
 and extension = string loc * payload
       (* [%id ARG]
@@ -55,12 +57,14 @@ and extension = string loc * payload
       *)
 
 and attributes = attribute list
+[@@deriving to_yojson]
 
 and payload =
   | PStr of structure
   | PSig of signature (* : SIG *)
   | PTyp of core_type  (* : T *)
   | PPat of pattern * expression option  (* ? P  or  ? P when E *)
+[@@deriving to_yojson]
 
 (** {1 Core language} *)
 
@@ -72,6 +76,7 @@ and core_type =
      ptyp_loc: Location.t;
      ptyp_attributes: attributes; (* ... [@id1] [@id2] *)
     }
+[@@deriving to_yojson]
 
 and core_type_desc =
   | Ptyp_any
@@ -134,12 +139,14 @@ and core_type_desc =
         (* (module S) *)
   | Ptyp_extension of extension
         (* [%id] *)
+[@@deriving to_yojson]
 
 and package_type = Longident.t loc * (Longident.t loc * core_type) list
       (*
         (module S)
         (module S with type t1 = T1 and ... and tn = Tn)
        *)
+[@@deriving to_yojson]
 
 and row_field =
   | Rtag of label loc * attributes * bool * core_type list
@@ -157,10 +164,12 @@ and row_field =
         *)
   | Rinherit of core_type
         (* [ T ] *)
+[@@deriving to_yojson]
 
 and object_field =
   | Otag of label loc * attributes * core_type
   | Oinherit of core_type
+[@@deriving to_yojson]
 
 (* Patterns *)
 
@@ -170,6 +179,7 @@ and pattern =
      ppat_loc: Location.t;
      ppat_attributes: attributes; (* ... [@id1] [@id2] *)
     }
+[@@deriving to_yojson]
 
 and pattern_desc =
   | Ppat_any
@@ -226,6 +236,7 @@ and pattern_desc =
         (* [%id] *)
   | Ppat_open of Longident.t loc * pattern
         (* M.(P) *)
+[@@deriving to_yojson]
 
 (* Value expressions *)
 
@@ -235,6 +246,7 @@ and expression =
      pexp_loc: Location.t;
      pexp_attributes: attributes; (* ... [@id1] [@id2] *)
     }
+[@@deriving to_yojson]
 
 and expression_desc =
   | Pexp_ident of Longident.t loc
@@ -354,6 +366,7 @@ and expression_desc =
         (* [%id] *)
   | Pexp_unreachable
         (* . *)
+[@@deriving to_yojson]
 
 and case =   (* (P -> E) or (P when E0 -> E) *)
     {
@@ -361,6 +374,7 @@ and case =   (* (P -> E) or (P when E0 -> E) *)
      pc_guard: expression option;
      pc_rhs: expression;
     }
+[@@deriving to_yojson]
 
 (* Value descriptions *)
 
@@ -372,7 +386,7 @@ and value_description =
      pval_attributes: attributes;  (* ... [@@id1] [@@id2] *)
      pval_loc: Location.t;
     }
-
+[@@deriving to_yojson]
 (*
   val x: T                            (prim = [])
   external x: T = "s1" ... "sn"       (prim = ["s1";..."sn"])
@@ -393,7 +407,7 @@ and type_declaration =
      ptype_attributes: attributes;   (* ... [@@id1] [@@id2] *)
      ptype_loc: Location.t;
     }
-
+[@@deriving to_yojson]
 (*
   type t                     (abstract, no manifest)
   type t = T0                (abstract, manifest=T0)
@@ -411,6 +425,7 @@ and type_kind =
   | Ptype_record of label_declaration list
         (* Invariant: non-empty list *)
   | Ptype_open
+[@@deriving to_yojson]
 
 and label_declaration =
     {
@@ -420,7 +435,7 @@ and label_declaration =
      pld_loc: Location.t;
      pld_attributes: attributes; (* l : T [@id1] [@id2] *)
     }
-
+[@@deriving to_yojson]
 (*  { ...; l: T; ... }            (mutable=Immutable)
     { ...; mutable l: T; ... }    (mutable=Mutable)
 
@@ -435,11 +450,12 @@ and constructor_declaration =
      pcd_loc: Location.t;
      pcd_attributes: attributes; (* C of ... [@id1] [@id2] *)
     }
+[@@deriving to_yojson]
 
 and constructor_arguments =
   | Pcstr_tuple of core_type list
   | Pcstr_record of label_declaration list
-
+[@@deriving to_yojson]
 (*
   | C of T1 * ... * Tn     (res = None,    args = Pcstr_tuple [])
   | C: T0                  (res = Some T0, args = [])
@@ -457,6 +473,7 @@ and type_extension =
      ptyext_private: private_flag;
      ptyext_attributes: attributes;   (* ... [@@id1] [@@id2] *)
     }
+[@@deriving to_yojson]
 (*
   type t += ...
 *)
@@ -468,6 +485,7 @@ and extension_constructor =
      pext_loc : Location.t;
      pext_attributes: attributes; (* C of ... [@id1] [@id2] *)
     }
+[@@deriving to_yojson]
 
 and extension_constructor_kind =
     Pext_decl of constructor_arguments * core_type option
@@ -480,7 +498,7 @@ and extension_constructor_kind =
       (*
          | C = D
        *)
-
+[@@deriving to_yojson]
 (** {1 Class language} *)
 
 (* Type expressions for the class language *)
@@ -491,6 +509,7 @@ and class_type =
      pcty_loc: Location.t;
      pcty_attributes: attributes; (* ... [@id1] [@id2] *)
     }
+[@@deriving to_yojson]
 
 and class_type_desc =
   | Pcty_constr of Longident.t loc * core_type list
@@ -507,12 +526,14 @@ and class_type_desc =
         (* [%id] *)
   | Pcty_open of override_flag * Longident.t loc * class_type
         (* let open M in CT *)
+[@@deriving to_yojson]
 
 and class_signature =
     {
      pcsig_self: core_type;
      pcsig_fields: class_type_field list;
     }
+[@@deriving to_yojson]
 (* object('selfpat) ... end
    object ... end             (self = Ptyp_any)
  *)
@@ -523,6 +544,7 @@ and class_type_field =
      pctf_loc: Location.t;
      pctf_attributes: attributes; (* ... [@@id1] [@@id2] *)
     }
+[@@deriving to_yojson]
 
 and class_type_field_desc =
   | Pctf_inherit of class_type
@@ -540,6 +562,7 @@ and class_type_field_desc =
         (* [@@@id] *)
   | Pctf_extension of extension
         (* [%%id] *)
+[@@deriving to_yojson]
 
 and 'a class_infos =
     {
@@ -550,6 +573,7 @@ and 'a class_infos =
      pci_loc: Location.t;
      pci_attributes: attributes;  (* ... [@@id1] [@@id2] *)
     }
+[@@deriving to_yojson]
 (* class c = ...
    class ['a1,...,'an] c = ...
    class virtual c = ...
@@ -559,7 +583,7 @@ and 'a class_infos =
 
 
 
-and class_type_declaration = class_type class_infos
+and class_type_declaration = class_type class_infos [@@deriving to_yojson]
 
 (* Value expressions for the class language *)
 
@@ -569,6 +593,7 @@ and class_expr =
      pcl_loc: Location.t;
      pcl_attributes: attributes; (* ... [@id1] [@id2] *)
     }
+[@@deriving to_yojson]
 
 and class_expr_desc =
   | Pcl_constr of Longident.t loc * core_type list
@@ -599,13 +624,14 @@ and class_expr_desc =
   (* [%id] *)
   | Pcl_open of override_flag * Longident.t loc * class_expr
   (* let open M in CE *)
-
+[@@deriving to_yojson]
 
 and class_structure =
     {
      pcstr_self: pattern;
      pcstr_fields: class_field list;
     }
+[@@deriving to_yojson]
 (* object(selfpat) ... end
    object ... end           (self = Ppat_any)
  *)
@@ -616,6 +642,7 @@ and class_field =
      pcf_loc: Location.t;
      pcf_attributes: attributes; (* ... [@@id1] [@@id2] *)
     }
+[@@deriving to_yojson]
 
 and class_field_desc =
   | Pcf_inherit of unit
@@ -640,11 +667,12 @@ and class_field_desc =
         (* [@@@id] *)
   | Pcf_extension of extension
         (* [%%id] *)
+[@@deriving to_yojson]
 
 and class_field_kind =
   | Cfk_virtual of core_type
   | Cfk_concrete of override_flag * expression
-
+[@@deriving to_yojson]
 
 
 (** {1 Module language} *)
@@ -657,6 +685,7 @@ and module_type =
      pmty_loc: Location.t;
      pmty_attributes: attributes; (* ... [@id1] [@id2] *)
     }
+[@@deriving to_yojson]
 
 and module_type_desc =
   | Pmty_ident of Longident.t loc
@@ -673,14 +702,17 @@ and module_type_desc =
         (* [%id] *)
   | Pmty_alias of Longident.t loc
         (* (module M) *)
+[@@deriving to_yojson]
 
 and signature = signature_item list
+[@@deriving to_yojson]
 
 and signature_item =
     {
      psig_desc: signature_item_desc;
      psig_loc: Location.t;
     }
+[@@deriving to_yojson]
 
 and signature_item_desc =
   | Psig_value of value_description
@@ -713,6 +745,7 @@ and signature_item_desc =
         (* [@@@id] *)
   | Psig_extension of extension * attributes
         (* [%%id] *)
+[@@deriving to_yojson]
 
 and module_declaration =
     {
@@ -721,6 +754,7 @@ and module_declaration =
      pmd_attributes: attributes; (* ... [@@id1] [@@id2] *)
      pmd_loc: Location.t;
     }
+[@@deriving to_yojson]
 (* S : MT *)
 
 and module_type_declaration =
@@ -730,6 +764,7 @@ and module_type_declaration =
      pmtd_attributes: attributes; (* ... [@@id1] [@@id2] *)
      pmtd_loc: Location.t;
     }
+[@@deriving to_yojson]
 (* S = MT
    S       (abstract module type declaration, pmtd_type = None)
 *)
@@ -741,6 +776,7 @@ and open_description =
      popen_loc: Location.t;
      popen_attributes: attributes;
     }
+[@@deriving to_yojson]
 (* open! X - popen_override = Override (silences the 'used identifier
                               shadowing' warning)
    open  X - popen_override = Fresh
@@ -752,11 +788,12 @@ and 'a include_infos =
      pincl_loc: Location.t;
      pincl_attributes: attributes;
     }
+[@@deriving to_yojson]
 
-and include_description = module_type include_infos
+and include_description = module_type include_infos [@@deriving to_yojson]
 (* include MT *)
 
-and include_declaration = module_expr include_infos
+and include_declaration = module_expr include_infos [@@deriving to_yojson]
 (* include ME *)
 
 and with_constraint =
@@ -771,7 +808,7 @@ and with_constraint =
         (* with type X.t := ..., same format as [Pwith_type] *)
   | Pwith_modsubst of Longident.t loc * Longident.t loc
         (* with module X.Y := Z *)
-
+[@@deriving to_yojson]
 (* Value expressions for the module language *)
 
 and module_expr =
@@ -780,6 +817,7 @@ and module_expr =
      pmod_loc: Location.t;
      pmod_attributes: attributes; (* ... [@id1] [@id2] *)
     }
+[@@deriving to_yojson]
 
 and module_expr_desc =
   | Pmod_ident of Longident.t loc
@@ -796,14 +834,16 @@ and module_expr_desc =
         (* (val E) *)
   | Pmod_extension of extension
         (* [%id] *)
+[@@deriving to_yojson]
 
-and structure = structure_item list [@@deriving yojson]
+and structure = structure_item list [@@deriving to_yojson]
 
 and structure_item =
     {
      pstr_desc: structure_item_desc;
      pstr_loc: Location.t;
     }
+[@@deriving to_yojson]
 
 and structure_item_desc =
   | Pstr_eval of expression * attributes
@@ -840,6 +880,7 @@ and structure_item_desc =
         (* [@@@id] *)
   | Pstr_extension of extension * attributes
         (* [%%id] *)
+[@@deriving to_yojson]
 
 and value_binding =
   {
@@ -848,6 +889,7 @@ and value_binding =
     pvb_attributes: attributes;
     pvb_loc: Location.t;
   }
+[@@deriving to_yojson]
 
 and module_binding =
     {
@@ -856,4 +898,5 @@ and module_binding =
      pmb_attributes: attributes;
      pmb_loc: Location.t;
     }
+[@@deriving to_yojson]
 (* X = ME *)
