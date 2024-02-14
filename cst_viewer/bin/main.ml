@@ -32,14 +32,37 @@ let () =
 (* open Yojson *)
 
 (* Define an OCaml type *)
- type person = {
-  name : string;
+
+(* Define a nested type *)
+
+type nestedName = {
+  firstName : string;
+  lastName : string;
+}
+
+let nestedName_to_yojson (nestedName : nestedName) : Yojson.Safe.t =
+  `Assoc [
+    ("firstName", `String nestedName.firstName);
+    ("lastName", `String nestedName.lastName);
+  ]
+
+type person = {
+  name : nestedName;
   age : int;
-  } 
-[@@deriving to_yojson]
+  }
+
+let person_to_yojson (person : person) : Yojson.Safe.t =
+  `Assoc [
+    ("name", nestedName_to_yojson person.name);
+    ("age", `Int person.age);
+  ]
+
+(* Convert nestedName to JSON *)
 
 (* Example person *)
-let my_person = { name = "Alice"; age = 30 }
+let my_name = { firstName = "Alice"; lastName = "Smith" }
+let my_person = { name = my_name; age = 30 }
+(* Convert person to JSON *)
 (* let xx = person_to_yojson my_person *)
 
 (* Convert person to JSON and store in a file *)
@@ -47,8 +70,7 @@ let store_person_as_json_file filename person =
   let json_str = Yojson.Safe.to_string (person_to_yojson person) in
   let oc = open_out filename in
   output_string oc json_str;
-  close_out oc 
+  close_out oc
 
 (* Usage *)
 let () = store_person_as_json_file "person.json" my_person
-
