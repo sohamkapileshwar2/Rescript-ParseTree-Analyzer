@@ -35,7 +35,10 @@ let () =
 
 (* Define a nested type *)
 
-type nestedName = {
+open Person_j
+open Person
+
+(* type nestedName = {
   firstName : string;
   lastName : string;
 }
@@ -55,19 +58,21 @@ let person_to_yojson (person : person) : Yojson.Safe.t =
   `Assoc [
     ("name", nestedName_to_yojson person.name);
     ("age", `Int person.age);
-  ]
+  ] *)
 
 (* Convert nestedName to JSON *)
 
 (* Example person *)
 let my_name = { firstName = "Alice"; lastName = "Smith" }
 let my_person = { name = my_name; age = 30 }
+
+let my_constant = Pconst_char 97
 (* Convert person to JSON *)
 (* let xx = person_to_yojson my_person *)
 
 (* Convert person to JSON and store in a file *)
-let store_person_as_json_file filename person =
-  let json_str = Yojson.Safe.to_string (person_to_yojson person) in
+let store_person_as_json_file filename _constant =
+  let json_str =  string_of_constant my_constant in
   let oc = open_out filename in
   output_string oc json_str;
   close_out oc

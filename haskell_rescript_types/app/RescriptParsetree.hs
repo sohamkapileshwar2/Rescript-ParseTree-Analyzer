@@ -599,3 +599,15 @@ data Variance
   | Contravariant
   | Invariant
   deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+
+data SomeTest
+  = SomeTestCons SomeJSON
+  | SomeTestCons2 SomeJSON
+  deriving (Generic, ToJSON, FromJSON)
+
+data SomeJSON =
+  SomeJSON
+    {
+      name :: String
+    }
+    deriving (Generic, ToJSON, FromJSON)
