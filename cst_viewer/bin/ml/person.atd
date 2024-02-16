@@ -13,4 +13,4 @@ type constant = [
     | Pconst_char of int
     | Pconst_string of (string * string option)
     | Pconst_float of (string * string option)
-]
+] <ocaml repr="classic">

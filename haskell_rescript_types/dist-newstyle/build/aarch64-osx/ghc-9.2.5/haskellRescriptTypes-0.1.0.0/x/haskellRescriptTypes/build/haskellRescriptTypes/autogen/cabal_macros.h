@@ -10,15 +10,15 @@
   (major1) == 0 && (major2) <  1 || \
   (major1) == 0 && (major2) == 1 && (minor) <= 0)
 #endif /* MIN_VERSION_haskellRescriptTypes */
-/* package aeson-2.1.2.1 */
+/* package aeson-2.2.1.0 */
 #ifndef VERSION_aeson
-#define VERSION_aeson "2.1.2.1"
+#define VERSION_aeson "2.2.1.0"
 #endif /* VERSION_aeson */
 #ifndef MIN_VERSION_aeson
 #define MIN_VERSION_aeson(major1,major2,minor) (\
   (major1) <  2 || \
-  (major1) == 2 && (major2) <  1 || \
-  (major1) == 2 && (major2) == 1 && (minor) <= 2)
+  (major1) == 2 && (major2) <  2 || \
+  (major1) == 2 && (major2) == 2 && (minor) <= 1)
 #endif /* MIN_VERSION_aeson */
 /* package base-4.16.4.0 */
 #ifndef VERSION_base
@@ -30,6 +30,16 @@
   (major1) == 4 && (major2) <  16 || \
   (major1) == 4 && (major2) == 16 && (minor) <= 4)
 #endif /* MIN_VERSION_base */
+/* package bytestring-0.11.5.3 */
+#ifndef VERSION_bytestring
+#define VERSION_bytestring "0.11.5.3"
+#endif /* VERSION_bytestring */
+#ifndef MIN_VERSION_bytestring
+#define MIN_VERSION_bytestring(major1,major2,minor) (\
+  (major1) <  0 || \
+  (major1) == 0 && (major2) <  11 || \
+  (major1) == 0 && (major2) == 11 && (minor) <= 5)
+#endif /* MIN_VERSION_bytestring */
 /* package haskell-say-1.0.0.0 */
 #ifndef VERSION_haskell_say
 #define VERSION_haskell_say "1.0.0.0"
@@ -40,15 +50,15 @@
   (major1) == 1 && (major2) <  0 || \
   (major1) == 1 && (major2) == 0 && (minor) <= 0)
 #endif /* MIN_VERSION_haskell_say */
-/* package text-1.2.5.0 */
+/* package text-2.1 */
 #ifndef VERSION_text
-#define VERSION_text "1.2.5.0"
+#define VERSION_text "2.1"
 #endif /* VERSION_text */
 #ifndef MIN_VERSION_text
 #define MIN_VERSION_text(major1,major2,minor) (\
-  (major1) <  1 || \
-  (major1) == 1 && (major2) <  2 || \
-  (major1) == 1 && (major2) == 2 && (minor) <= 5)
+  (major1) <  2 || \
+  (major1) == 2 && (major2) <  1 || \
+  (major1) == 2 && (major2) == 1 && (minor) <= 0)
 #endif /* MIN_VERSION_text */
 
 /* tool gcc-15.0.0 */

@@ -5,6 +5,10 @@ module RescriptParsetree where
 import Data.Char
 import Data.Aeson
 import GHC.Generics
+import qualified Data.ByteString.Lazy as LBS
+import qualified Data.ByteString.Lazy.Char8 as LBS8
+import qualified Data.Text.Encoding as TE
+import qualified Data.Text as T
 
 -- Structure Types
 
@@ -302,8 +306,7 @@ data ExpressionDesc
 
 type Attributes = [Attribute]
 
-data Attribute = Attribute (Loc String) Payload
-  deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+type Attribute = (Loc String, Payload)
 
 -- Payload Types
 
@@ -324,7 +327,7 @@ data SignatureItem = SignatureItem
     }
     deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
 
-data SignatureItemDesc = 
+data SignatureItemDesc =
     PsigValue ValueDescription
   | PsigType TypeDeclaration
   | PsigTypext TypeExtension
@@ -600,14 +603,29 @@ data Variance
   | Invariant
   deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
 
-data SomeTest
-  = SomeTestCons SomeJSON
-  | SomeTestCons2 SomeJSON
-  deriving (Generic, ToJSON, FromJSON)
+data TestJSON = SomeCons
+  deriving (Generic, Show, Read, Eq)
 
-data SomeJSON =
-  SomeJSON
-    {
-      name :: String
-    }
-    deriving (Generic, ToJSON, FromJSON)
+instance ToJSON TestJSON where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True, sumEncoding = defaultTaggedObject {tagFieldName = "tag"}, allNullaryToStringTag = False}
+
+instance FromJSON TestJSON where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True, allNullaryToStringTag = False}
+
+encodeVal :: LBS.ByteString
+encodeVal = encode SomeCons
+
+decodeVal :: Maybe TestJSON
+decodeVal = decode $ LBS.fromStrict $ TE.encodeUtf8 $ T.pack "{\"tag\": \"SomeCons\"}"
+
+data TestJSON2 a = TestJSON2 {
+  key1 :: String,
+  key2 :: Maybe a
+}
+  deriving (Generic, Show, Read, Eq, ToJSON, FromJSON)
+
+encodeVal2 :: LBS.ByteString
+encodeVal2 = encode (TestJSON2 { key1 = "foo", key2 = Nothing } :: TestJSON2 String)
+
+decodeVal2 :: Maybe (TestJSON2 String)
+decodeVal2 = decode $ LBS.fromStrict $ TE.encodeUtf8 $ T.pack "[\"foo\", \"Hello\"]"

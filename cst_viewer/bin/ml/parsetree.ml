@@ -48,7 +48,13 @@ type attribute = string loc * payload
           Metadata containers passed around within the AST.
           The compiler ignores unknown attributes.
        *)
-[@@deriving to_yojson]
+
+
+     (* `List
+      [
+       `String "FirstArg";
+       `String "FirstArg"
+      ] *)
 
 and extension = string loc * payload
       (* [%id ARG]
@@ -58,7 +64,6 @@ and extension = string loc * payload
       *)
 
 and attributes = attribute list
-[@@deriving to_yojson]
 
 and payload =
   | PStr of structure

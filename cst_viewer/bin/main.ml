@@ -35,8 +35,10 @@ let () =
 
 (* Define a nested type *)
 
-open Person_j
+(* open Person_j *)
 open Person
+open Parsetree
+open Parsetree_serializer
 
 (* type nestedName = {
   firstName : string;
@@ -64,15 +66,38 @@ let person_to_yojson (person : person) : Yojson.Safe.t =
 
 (* Example person *)
 let my_name = { firstName = "Alice"; lastName = "Smith" }
-let my_person = { name = my_name; age = 30 }
+let my_person =
+  { name = my_name;
+    age =
+      match Some 5 with
+      | None -> 10
+      | Some u -> u
+  }
 
-let my_constant = Pconst_char 97
+let _my_constant = Pconst_float ("5.0", Some 'f')
+
+let my_attribute : attribute = ({
+    txt : string = "Hello";
+    loc = {
+      loc_start = {pos_fname = "file"; pos_lnum = 1; pos_bol = 0; pos_cnum = 0};
+      loc_end = {pos_fname = "file"; pos_lnum = 1; pos_bol = 0; pos_cnum = 0};
+      loc_ghost = false
+    }
+  }, PSig [])
+
+(* Convert nestedName to JSON *)
+(* let x = nestedName_to_yojson my_name *)
+
+(* Convert person to JSON *)
+(* let xx = person_to_yojson my_person *)
+
+(* Convert person to JSON and store in a file *)
 (* Convert person to JSON *)
 (* let xx = person_to_yojson my_person *)
 
 (* Convert person to JSON and store in a file *)
 let store_person_as_json_file filename _constant =
-  let json_str =  string_of_constant my_constant in
+  let json_str = Yojson.Safe.to_string (attribute_to_yojson my_attribute) in
   let oc = open_out filename in
   output_string oc json_str;
   close_out oc
