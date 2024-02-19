@@ -18,7 +18,7 @@ data StructureItem = StructureItem
     { pstrDesc :: StructureItemDesc
     , pstrLoc :: Location
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
 
 data StructureItemDesc =
     PstrEval Expression Attributes
@@ -185,8 +185,8 @@ data ClassField = ClassField
 
 data ClassFieldDesc
     = PcfInherit ()
-    | PcfVal (Loc Label) MutableFlag ClassFieldKind
-    | PcfMethod (Loc Label) PrivateFlag ClassFieldKind
+    | PcfVal (Loc Label, MutableFlag, ClassFieldKind)
+    | PcfMethod (Loc Label, PrivateFlag, ClassFieldKind)
     | PcfConstraint (CoreType, CoreType)
     | PcfInitializer Expression
     | PcfAttribute Attribute
@@ -228,8 +228,8 @@ data ClassTypeField = ClassTypeField
 
 data ClassTypeFieldDesc
     = PctfInherit ClassType
-    | PctfVal (Loc Label) MutableFlag VirtualFlag CoreType
-    | PctfMethod (Loc Label) PrivateFlag VirtualFlag CoreType
+    | PctfVal (Loc Label, MutableFlag, VirtualFlag, CoreType)
+    | PctfMethod (Loc Label, PrivateFlag, VirtualFlag, CoreType)
     | PctfConstraint (CoreType, CoreType)
     | PctfAttribute Attribute
     | PctfExtension Extension
@@ -337,6 +337,7 @@ data SignatureItemDesc =
   | PsigModtype ModuleTypeDeclaration
   | PsigOpen OpenDescription
   | PsigInclude IncludeDeclaration
+  | PsigClass ()
   | PsigClassType ClassTypeDeclaration
   | PsigAttribute Attribute
   | PsigExtension Extension
@@ -603,20 +604,20 @@ data Variance
   | Invariant
   deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
 
-data TestJSON = SomeCons
+data TestJSON = SomeCons [String]
   deriving (Generic, Show, Read, Eq)
 
 instance ToJSON TestJSON where
-  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True, sumEncoding = defaultTaggedObject {tagFieldName = "tag"}, allNullaryToStringTag = False}
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+encodeVal :: LBS.ByteString
+encodeVal = encode (SomeCons ["Hello", "Bye"])
 
 instance FromJSON TestJSON where
   parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True, allNullaryToStringTag = False}
 
-encodeVal :: LBS.ByteString
-encodeVal = encode SomeCons
-
 decodeVal :: Maybe TestJSON
-decodeVal = decode $ LBS.fromStrict $ TE.encodeUtf8 $ T.pack "{\"tag\": \"SomeCons\"}"
+decodeVal = decode $ LBS.fromStrict $ TE.encodeUtf8 $ T.pack "{\"contents\":[\"Hello\",\"Bye\"],\"tag\":\"SomeCons\"}"
 
 data TestJSON2 a = TestJSON2 {
   key1 :: String,
@@ -625,7 +626,7 @@ data TestJSON2 a = TestJSON2 {
   deriving (Generic, Show, Read, Eq)
 
 instance ToJSON a => ToJSON (TestJSON2 a) where
-  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True, sumEncoding = ObjectWithSingleField}
 
 instance FromJSON a => FromJSON (TestJSON2 a) where
   parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
