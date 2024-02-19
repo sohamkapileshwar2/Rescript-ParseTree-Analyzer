@@ -622,10 +622,16 @@ data TestJSON2 a = TestJSON2 {
   key1 :: String,
   key2 :: Maybe a
 }
-  deriving (Generic, Show, Read, Eq, ToJSON, FromJSON)
+  deriving (Generic, Show, Read, Eq)
+
+instance ToJSON a => ToJSON (TestJSON2 a) where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON a => FromJSON (TestJSON2 a) where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 encodeVal2 :: LBS.ByteString
 encodeVal2 = encode (TestJSON2 { key1 = "foo", key2 = Nothing } :: TestJSON2 String)
 
 decodeVal2 :: Maybe (TestJSON2 String)
-decodeVal2 = decode $ LBS.fromStrict $ TE.encodeUtf8 $ T.pack "[\"foo\", \"Hello\"]"
+decodeVal2 = decode $ LBS.fromStrict $ TE.encodeUtf8 $ T.pack "{\"key1\":\"foo\",\"key2\":null,\"tag\":\"TestJSON2\"}"
