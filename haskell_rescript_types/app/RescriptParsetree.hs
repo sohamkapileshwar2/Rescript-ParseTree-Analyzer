@@ -6,6 +6,7 @@ import Prelude
 import Data.Char
 import Data.Aeson
 import Data.Maybe
+import Data.Data (typeOf)
 import GHC.Generics
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.Lazy.Char8 as LBS8
@@ -405,7 +406,13 @@ data ExpressionDesc
   | PexpOpen OverrideFlag (Loc Longident) Expression
   | PexpExtension Extension
   | PexpUnreachable
-  deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+  deriving (Generic, Show, Read, Eq)
+
+instance ToJSON ExpressionDesc where
+  toJSON = genericToJSON $ defaultOptions {allNullaryToStringTag = False}
+
+instance FromJSON ExpressionDesc where
+  parseJSON = genericParseJSON $ defaultOptions {allNullaryToStringTag = False}
 
 -- Attributes Types
 
@@ -482,7 +489,13 @@ data CoreTypeDesc
   | PtypPoly [Loc String] CoreType
   | PtypPackage PackageType
   | PtypExtension Extension
-  deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+  deriving (Generic, Show, Read, Eq)
+
+instance ToJSON CoreTypeDesc where
+  toJSON = genericToJSON $ defaultOptions {allNullaryToStringTag = False}
+
+instance FromJSON CoreTypeDesc where
+  parseJSON = genericParseJSON $ defaultOptions {allNullaryToStringTag = False}
 
 -- Package Type
 
@@ -567,7 +580,14 @@ data PatternDesc =
   | PpatException Pattern
   | PpatExtension Extension
   | PpatOpen (Loc Longident) Pattern
-  deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+  deriving (Generic, Show, Read, Eq)
+
+instance ToJSON PatternDesc where
+  toJSON = genericToJSON $ defaultOptions {allNullaryToStringTag = False}
+
+instance FromJSON PatternDesc where
+  parseJSON = genericParseJSON $ defaultOptions {allNullaryToStringTag = False}
+
 
 -- Extension Types
 
@@ -684,7 +704,13 @@ data TypeKind
   | PtypeVariant [ConstructorDeclaration]
   | PtypeRecord [LabelDeclaration]
   | PtypeOpen
-  deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+  deriving (Generic, Show, Read, Eq)
+
+instance ToJSON TypeKind where
+  toJSON = genericToJSON $ defaultOptions {allNullaryToStringTag = False}
+
+instance FromJSON TypeKind where
+  parseJSON = genericParseJSON $ defaultOptions {allNullaryToStringTag = False}
 
 -- Label Declaration Types
 
@@ -717,41 +743,83 @@ data Constant =
 -- RecFlag Types
 
 data RecFlag = Nonrecursive | Recursive
-  deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+  deriving (Generic, Show, Read, Eq)
+
+instance ToJSON RecFlag where
+  toJSON = genericToJSON $ defaultOptions {allNullaryToStringTag = False}
+
+instance FromJSON RecFlag where
+  parseJSON = genericParseJSON $ defaultOptions {allNullaryToStringTag = False}
 
 -- Direction Flag Types
 
 data DirectionFlag = Upto | Downto
-  deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+  deriving (Generic, Show, Read, Eq)
+
+instance ToJSON DirectionFlag where
+  toJSON = genericToJSON $ defaultOptions {allNullaryToStringTag = False}
+
+instance FromJSON DirectionFlag where
+  parseJSON = genericParseJSON $ defaultOptions {allNullaryToStringTag = False}
 
 -- Private Flag Types
 
 data PrivateFlag
   = Private
   | Public
-  deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+  deriving (Generic, Show, Read, Eq)
+
+instance ToJSON PrivateFlag where
+  toJSON = genericToJSON $ defaultOptions {allNullaryToStringTag = False}
+
+instance FromJSON PrivateFlag where
+  parseJSON = genericParseJSON $ defaultOptions {allNullaryToStringTag = False}
 
 -- Mutable Flag Types
 
 data MutableFlag = Immutable | Mutable
-  deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+  deriving (Generic, Show, Read, Eq)
+
+instance ToJSON MutableFlag where
+  toJSON = genericToJSON $ defaultOptions {allNullaryToStringTag = False}
+
+instance FromJSON MutableFlag where
+  parseJSON = genericParseJSON $ defaultOptions {allNullaryToStringTag = False}
 
 -- Virtual Flag Types
 
 data VirtualFlag = Virtual | Concrete
-  deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+  deriving (Generic, Show, Read, Eq)
+
+instance ToJSON VirtualFlag where
+  toJSON = genericToJSON $ defaultOptions {allNullaryToStringTag = False}
+
+instance FromJSON VirtualFlag where
+  parseJSON = genericParseJSON $ defaultOptions {allNullaryToStringTag = False}
 
 -- Override Flag Types
 
 data OverrideFlag = Override | Fresh
-  deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+  deriving (Generic, Show, Read, Eq)
+
+instance ToJSON OverrideFlag where
+  toJSON = genericToJSON $ defaultOptions {allNullaryToStringTag = False}
+
+instance FromJSON OverrideFlag where
+  parseJSON = genericParseJSON $ defaultOptions {allNullaryToStringTag = False}
 
 -- Closed Flag Types
 
 data ClosedFlag
   = Closed
   | Open
-  deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+  deriving (Generic, Show, Read, Eq)
+
+instance ToJSON ClosedFlag where
+  toJSON = genericToJSON $ defaultOptions {allNullaryToStringTag = False}
+
+instance FromJSON ClosedFlag where
+  parseJSON = genericParseJSON $ defaultOptions {allNullaryToStringTag = False}
 
 -- Label
 
@@ -763,7 +831,13 @@ data ArgLabel
   = Nolabel
   | Labelled String
   | Optional String
-  deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+  deriving (Generic, Show, Read, Eq)
+
+instance ToJSON ArgLabel where
+  toJSON = genericToJSON $ defaultOptions {allNullaryToStringTag = False}
+
+instance FromJSON ArgLabel where
+  parseJSON = genericParseJSON $ defaultOptions {allNullaryToStringTag = False}
 
 -- Loc Type
 
@@ -771,7 +845,13 @@ data Loc a = Loc
     { txt :: a
     , loc :: Location
     }
-  deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+  deriving (Generic, Show, Read, Eq)
+
+instance ToJSON a => ToJSON (Loc a) where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON a => FromJSON (Loc a) where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 -- Variance Types
 
@@ -779,7 +859,13 @@ data Variance
   = Covariant
   | Contravariant
   | Invariant
-  deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+  deriving (Generic, Show, Read, Eq)
+
+instance ToJSON Variance where
+  toJSON = genericToJSON $ defaultOptions {allNullaryToStringTag = False}
+
+instance FromJSON Variance where
+  parseJSON = genericParseJSON $ defaultOptions {allNullaryToStringTag = False}
 
 
 -- TESTING --
@@ -787,18 +873,23 @@ data Variance
 importParseTree :: IO ()
 importParseTree = do
   jsonData <- readFile "res.json"
-  let parseTree = TR.readMaybe jsonData :: Maybe Structure
-  print parseTree
+  -- print jsonData
+  let parseTree = eitherDecode $ LBS.fromStrict $ TE.encodeUtf8 $ T.pack jsonData :: Either String Structure
+  case parseTree of
+    Left err -> print err
+    Right val -> do
+      print "Parsed Success"
+      print (typeOf val)
 
 -- Testing ToJSON and FromJSON instances
 
 type DummyTuple = (String, String)
 
-data TestJSON = SomeCons String
+data TestJSON = SomeCons
   deriving (Generic, Show, Read, Eq)
 
 instance ToJSON TestJSON where
-  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True,  allNullaryToStringTag = False}
 
 instance FromJSON TestJSON where
   parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True, allNullaryToStringTag = False}
@@ -807,7 +898,7 @@ instance FromJSON TestJSON where
 -- encodeVal = encode (SomeCons (TestJSON2 {key1 = "hello", key2 = Nothing} :: TestJSON2 String))
 
 encodeVal :: LBS.ByteString
-encodeVal = encode (SomeCons "Hello")
+encodeVal = encode (SomeCons)
 
 decodeVal :: Maybe TestJSON
 decodeVal = decode $ LBS.fromStrict $ TE.encodeUtf8 $ T.pack "{\"contents\":[\"Hello\",\"Bye\"],\"tag\":\"SomeCons\"}"
@@ -819,7 +910,7 @@ data TestJSON2 a = TestJSON2 {
   deriving (Generic, Show, Read, Eq)
 
 instance ToJSON a => ToJSON (TestJSON2 a) where
-  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True, sumEncoding = ObjectWithSingleField}
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
 
 instance FromJSON a => FromJSON (TestJSON2 a) where
   parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}

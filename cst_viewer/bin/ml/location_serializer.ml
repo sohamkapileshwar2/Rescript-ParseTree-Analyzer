@@ -5,25 +5,19 @@ open Location
 let t_to_yojson (t : t) : Yojson.Safe.t =
   `Assoc [
     ("tag", `String "Location");
-    ("contents", `Assoc [
-      ("locStart", `Assoc [
-        ("tag", `String "Position");
-        ("contents", `Assoc [
-          ("posFname", `String t.loc_start.pos_fname);
-          ("posLnum", `Int t.loc_start.pos_lnum);
-          ("posBol", `Int t.loc_start.pos_bol);
-          ("posCnum", `Int t.loc_start.pos_cnum)
-        ])
-      ]);
-      ("locEnd", `Assoc [
-        ("tag", `String "Position");
-        ("contents", `Assoc [
-          ("posFname", `String t.loc_start.pos_fname);
-          ("posLnum", `Int t.loc_start.pos_lnum);
-          ("posBol", `Int t.loc_start.pos_bol);
-          ("posCnum", `Int t.loc_start.pos_cnum)
-        ])
-      ]);
-      ("locGhost", `Bool t.loc_ghost);
-    ])
+    ("locStart", `Assoc [
+      ("tag", `String "Position");
+      ("posFname", `String t.loc_start.pos_fname);
+      ("posLnum", `Int t.loc_start.pos_lnum);
+      ("posBol", `Int t.loc_start.pos_bol);
+      ("posCnum", `Int t.loc_start.pos_cnum)
+    ]);
+    ("locEnd", `Assoc [
+      ("tag", `String "Position");
+      ("posFname", `String t.loc_start.pos_fname);
+      ("posLnum", `Int t.loc_start.pos_lnum);
+      ("posBol", `Int t.loc_start.pos_bol);
+      ("posCnum", `Int t.loc_start.pos_cnum)
+    ]);
+    ("locGhost", `Bool t.loc_ghost);
   ]

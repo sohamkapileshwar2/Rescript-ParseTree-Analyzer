@@ -109,12 +109,8 @@ let arg_label_to_yojson (arg_label : arg_label) : Yojson.Safe.t =
 let loc_to_yojson (a_to_yojson : 'a -> Yojson.Safe.t) (loc : 'a loc) : Yojson.Safe.t =
   `Assoc [
       ("tag", `String "Loc");
-      ("contents", `List [
-        `Assoc [
-          ("txt", a_to_yojson loc.txt);
-          ("loc", Location_serializer.t_to_yojson loc.loc)
-        ]
-      ])
+      ("txt", a_to_yojson loc.txt);
+      ("loc", Location_serializer.t_to_yojson loc.loc)
     ]
 
 let variance_to_yojson (variance : variance) : Yojson.Safe.t =
