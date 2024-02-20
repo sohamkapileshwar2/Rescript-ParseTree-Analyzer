@@ -2,13 +2,16 @@
 {-# LANGUAGE DeriveGeneric #-}
 module RescriptParsetree where
 
+import Prelude
 import Data.Char
 import Data.Aeson
+import Data.Maybe
 import GHC.Generics
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.Lazy.Char8 as LBS8
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text as T
+import qualified Text.Read as TR
 
 -- Structure Types
 
@@ -19,6 +22,12 @@ data StructureItem = StructureItem
     , pstrLoc :: Location
     }
     deriving (Generic, Show, Read, Eq)
+
+instance ToJSON StructureItem where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON StructureItem where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 data StructureItemDesc =
     PstrEval Expression Attributes
@@ -45,7 +54,13 @@ data Location = Location
     , locEnd :: Position
     , locGhost :: Bool
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON Location where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON Location where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 data Position = Position
     { posFname :: String
@@ -53,7 +68,13 @@ data Position = Position
     , posBol :: Int
     , posCnum :: Int
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON Position where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON Position where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 -- Longident Types
 
@@ -71,14 +92,26 @@ data ModuleBinding = ModuleBinding
     , pmbAttributes :: Attributes
     , pmbLoc :: Location
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON ModuleBinding where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON ModuleBinding where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 data ModuleExpr = ModuleExpr
     { pmodDesc :: ModuleExprDesc
     , pmodLoc :: Location
     , pmodAttributes :: Attributes
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON ModuleExpr where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON ModuleExpr where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 data ModuleExprDesc
     = PmodIdent (Loc Longident)
@@ -95,7 +128,13 @@ data ModuleType = ModuleType
     , pmtyLoc :: Location
     , pmtyAttributes :: Attributes
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON ModuleType where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON ModuleType where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 data ModuleTypeDesc
     = PmtyIdent (Loc Longident)
@@ -113,7 +152,13 @@ data ModuleDeclaration = ModuleDeclaration
     , pmdAttributes :: Attributes
     , pmdLoc :: Location
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON ModuleDeclaration where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON ModuleDeclaration where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 data ModuleTypeDeclaration = ModuleTypeDeclaration
     { pmtdName :: Loc String
@@ -121,7 +166,13 @@ data ModuleTypeDeclaration = ModuleTypeDeclaration
     , pmtdAttributes :: Attributes
     , pmtdLoc :: Location
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON ModuleTypeDeclaration where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON ModuleTypeDeclaration where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 -- Open Description
 
@@ -131,7 +182,13 @@ data OpenDescription = OpenDescription
     , popenLoc :: Location
     , popenAttributes :: Attributes
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON OpenDescription where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON OpenDescription where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 -- Include Description
 
@@ -142,7 +199,13 @@ data IncludeInfos a = IncludeInfos
     , pinclLoc :: Location
     , pinclAttributes :: Attributes
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON a => ToJSON (IncludeInfos a) where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON a => FromJSON (IncludeInfos a) where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 type IncludeDeclaration =  IncludeInfos ModuleExpr
 
@@ -168,20 +231,38 @@ data ClassInfos a = ClassInfos
     , pciLoc :: Location
     , pciAttributes :: Attributes
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON a => ToJSON (ClassInfos a) where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON a => FromJSON (ClassInfos a) where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 data ClassStructure = ClassStructure
     { pcstrSelf :: Pattern
     , pcstrFields :: [ClassField]
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON ClassStructure where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON ClassStructure where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 data ClassField = ClassField
     { pcfDesc :: ClassFieldDesc
     , pcfLoc :: Location
     , pcfAttributes :: Attributes
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON ClassField where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON ClassField where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 data ClassFieldDesc
     = PcfInherit ()
@@ -203,7 +284,13 @@ data ClassType = ClassType
     , pctyLoc :: Location
     , pctyAttributes :: Attributes
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON ClassType where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON ClassType where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 data ClassTypeDesc
     = PctyConstr (Loc Longident) [CoreType]
@@ -217,7 +304,13 @@ data ClassSignature = ClassSignature
     { pcsigSelf :: CoreType
     , pcsigFields :: [ClassTypeField]
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON ClassSignature where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON ClassSignature where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 data ClassTypeField = ClassTypeField
     { pctfDesc :: ClassTypeFieldDesc
@@ -240,7 +333,13 @@ data ClassExpr = ClassExpr
     , pclLoc :: Location
     , pclAttributes :: Attributes
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON ClassExpr where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON ClassExpr where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 data ClassExprDesc
     = PclConstr (Loc Longident) [CoreType]
@@ -261,7 +360,13 @@ data Expression = Expression
     , pexpLoc :: Location
     , pexpAttributes :: Attributes
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON Expression where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON Expression where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 data ExpressionDesc
   = PexpIdent (Loc Longident)
@@ -325,7 +430,13 @@ data SignatureItem = SignatureItem
     { psigDesc :: SignatureItemDesc
     , psigLoc :: Location
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON SignatureItem where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON SignatureItem where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 data SignatureItemDesc =
     PsigValue ValueDescription
@@ -350,7 +461,13 @@ data CoreType = CoreType
     , ptypLoc :: Location
     , ptypAttributes :: Attributes
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON CoreType where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON CoreType where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 data CoreTypeDesc
   = PtypAny
@@ -393,7 +510,13 @@ data ValueBinding = ValueBinding
     , pvbAttributes :: Attributes
     , pvbLoc :: Location
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON ValueBinding where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON ValueBinding where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 -- Case Types
 
@@ -402,7 +525,13 @@ data Case = Case
     , pcGuard :: Maybe Expression
     , pcRhs :: Expression
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON Case where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON Case where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 -- Pattern Types
 
@@ -411,7 +540,13 @@ data Pattern = Pattern
     , ppatLoc :: Location
     , ppatAttributes :: Attributes
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON Pattern where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON Pattern where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 data PatternDesc =
     PpatAny
@@ -437,7 +572,13 @@ data PatternDesc =
 -- Extension Types
 
 data Extension = Extension (Loc String) Payload
-  deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+  deriving (Generic, Show, Read, Eq)
+
+instance ToJSON Extension where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON Extension where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 data ExtensionConstructor = ExtensionConstructor
   {
@@ -446,7 +587,13 @@ data ExtensionConstructor = ExtensionConstructor
   , pextLoc :: Location
   , pextAttributes :: Attributes
   }
-  deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+  deriving (Generic, Show, Read, Eq)
+
+instance ToJSON ExtensionConstructor where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON ExtensionConstructor where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 data ExtensionConstructorKind =
     PextDecl ConstructorArguments (Maybe CoreType)
@@ -463,7 +610,13 @@ data ConstructorDeclaration = ConstructorDeclaration
     , pcdLoc :: Location
     , pcdAttributes :: Attributes
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON ConstructorDeclaration where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON ConstructorDeclaration where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 data ConstructorArguments
     = PcstrTuple [CoreType]
@@ -479,7 +632,13 @@ data ValueDescription = ValueDescription
     , pvalAttributes :: Attributes
     , pvalLoc :: Location
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON ValueDescription where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON ValueDescription where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 -- Type Declaration Types
 
@@ -493,7 +652,13 @@ data TypeDeclaration = TypeDeclaration
     , ptypeAttributes :: Attributes
     , ptypeLoc :: Location
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON TypeDeclaration where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON TypeDeclaration where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 -- Type Extension Types
 
@@ -504,7 +669,13 @@ data TypeExtension = TypeExtension
     , ptyextPrivate :: PrivateFlag
     , ptyextAttributes :: Attributes
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON TypeExtension where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON TypeExtension where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 -- TypeKind Types
 
@@ -524,7 +695,13 @@ data LabelDeclaration = LabelDeclaration
     , pldLoc :: Location
     , pldAttributes :: Attributes
     }
-    deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
+    deriving (Generic, Show, Read, Eq)
+
+instance ToJSON LabelDeclaration where
+  toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
+
+instance FromJSON LabelDeclaration where
+  parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 -- AST TYPES --
 
@@ -604,17 +781,33 @@ data Variance
   | Invariant
   deriving (Generic, Show, ToJSON, FromJSON, Read, Eq)
 
-data TestJSON = SomeCons [String]
+
+-- TESTING --
+
+importParseTree :: IO ()
+importParseTree = do
+  jsonData <- readFile "res.json"
+  let parseTree = TR.readMaybe jsonData :: Maybe Structure
+  print parseTree
+
+-- Testing ToJSON and FromJSON instances
+
+type DummyTuple = (String, String)
+
+data TestJSON = SomeCons String
   deriving (Generic, Show, Read, Eq)
 
 instance ToJSON TestJSON where
   toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
 
-encodeVal :: LBS.ByteString
-encodeVal = encode (SomeCons ["Hello", "Bye"])
-
 instance FromJSON TestJSON where
   parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True, allNullaryToStringTag = False}
+
+-- encodeVal :: LBS.ByteString
+-- encodeVal = encode (SomeCons (TestJSON2 {key1 = "hello", key2 = Nothing} :: TestJSON2 String))
+
+encodeVal :: LBS.ByteString
+encodeVal = encode (SomeCons "Hello")
 
 decodeVal :: Maybe TestJSON
 decodeVal = decode $ LBS.fromStrict $ TE.encodeUtf8 $ T.pack "{\"contents\":[\"Hello\",\"Bye\"],\"tag\":\"SomeCons\"}"

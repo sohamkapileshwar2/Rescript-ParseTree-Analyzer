@@ -109,7 +109,7 @@ let store_person_as_json_file filename result =
 
 let parse_file file_name =
   let parseResult = Res_driver.parsingEngine.parseImplementation ~forPrinter:false ~filename:file_name in
-  store_person_as_json_file "res.json" parseResult.parsetree
+  store_person_as_json_file "../haskell_rescript_types/res.json" parseResult.parsetree
 
 let () =
   if Array.length Sys.argv <> 2 then (

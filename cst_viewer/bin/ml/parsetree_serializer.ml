@@ -17,9 +17,7 @@ let constant_to_yojson (c : Parsetree.constant) : Yojson.Safe.t =
   | Pconst_char value ->
     `Assoc [
         ("tag", `String "PconstChar");
-        ("contents", `List [
-              `Int value
-        ])
+        ("contents", `Int value)
     ]
   | Pconst_string (value, delim) ->
     `Assoc [
@@ -71,15 +69,15 @@ and payload_to_yojson (p : payload) : Yojson.Safe.t =
   match p with
   | PStr s -> `Assoc [
     ("tag", `String "PStr");
-    ("contents", `List [structure_to_yojson s])
+    ("contents", structure_to_yojson s)
   ]
   | PSig s -> `Assoc [
     ("tag", `String "PSig");
-    ("contents", `List [signature_to_yojson s])
+    ("contents", signature_to_yojson s)
   ]
   | PTyp t -> `Assoc [
     ("tag", `String "PTyp");
-    ("contents", `List [core_type_to_yojson t])
+    ("contents", core_type_to_yojson t)
   ]
   | PPat (p, e) -> `Assoc [
     ("tag", `String "PPat");
@@ -110,7 +108,7 @@ and core_type_desc_to_yojson (t : core_type_desc) : Yojson.Safe.t =
   ]
   | Ptyp_var value -> `Assoc [
     ("tag", `String "PtypVar");
-    ("contents", `List [`String value])
+    ("contents", `String value)
   ]
   | Ptyp_arrow (label, t1, t2) -> `Assoc [
     ("tag", `String "PtypArrow");
@@ -122,7 +120,7 @@ and core_type_desc_to_yojson (t : core_type_desc) : Yojson.Safe.t =
   ]
   | Ptyp_tuple t -> `Assoc [
     ("tag", `String "PtypTuple");
-    ("contents", `List [`List (List.map core_type_to_yojson t)])
+    ("contents", `List (List.map core_type_to_yojson t))
   ]
   | Ptyp_constr (loc, t) -> `Assoc [
     ("tag", `String "PtypConstr");
@@ -172,11 +170,11 @@ and core_type_desc_to_yojson (t : core_type_desc) : Yojson.Safe.t =
    ]
   | Ptyp_package p -> `Assoc [
     ("tag", `String "PtypPackage");
-    ("contents", `List [package_type_to_yojson p])
+    ("contents", package_type_to_yojson p)
    ]
   | Ptyp_extension e -> `Assoc [
     ("tag", `String "PtypExtension");
-    ("contents", `List [extension_to_yojson e])
+    ("contents", extension_to_yojson e)
    ]
 
 (* Type PackageType *)
@@ -208,7 +206,7 @@ and row_field_to_yojson (r : row_field) : Yojson.Safe.t =
    ]
   | Rinherit t -> `Assoc [
     ("tag", `String "Rinherit");
-    ("contents", `List [core_type_to_yojson t])
+    ("contents", core_type_to_yojson t)
    ]
 
 (* Type ObjectField *)
@@ -225,7 +223,7 @@ and object_field_to_yojson (o : object_field) : Yojson.Safe.t =
   ]
   | Oinherit core_type -> `Assoc [
     ("tag", `String "Oinherit");
-    ("contents", `List [core_type_to_yojson core_type])
+    ("contents", core_type_to_yojson core_type)
   ]
 
 (* Type Pattern *)
@@ -247,7 +245,7 @@ and pattern_desc_to_yojson (p : pattern_desc) : Yojson.Safe.t =
   ]
   | Ppat_var value -> `Assoc [
     ("tag", `String "PpatVar");
-    ("contents", `List [Asttypes_serializer.loc_to_yojson (fun x -> `String x) value])
+    ("contents", Asttypes_serializer.loc_to_yojson (fun x -> `String x) value)
   ]
   | Ppat_alias (p, value) -> `Assoc [
     ("tag", `String "PpatAlias");
@@ -258,7 +256,7 @@ and pattern_desc_to_yojson (p : pattern_desc) : Yojson.Safe.t =
   ]
   | Ppat_constant c -> `Assoc [
     ("tag", `String "PpatConstant");
-    ("contents", `List [constant_to_yojson c])
+    ("contents", constant_to_yojson c)
   ]
   | Ppat_interval (c1, c2) -> `Assoc [
     ("tag", `String "PpatInterval");
@@ -269,7 +267,7 @@ and pattern_desc_to_yojson (p : pattern_desc) : Yojson.Safe.t =
   ]
   | Ppat_tuple p -> `Assoc [
     ("tag", `String "PpatTuple");
-    ("contents", `List [`List (List.map pattern_to_yojson p)])
+    ("contents", `List (List.map pattern_to_yojson p))
   ]
   | Ppat_construct (loc, p) -> `Assoc [
     ("tag", `String "PpatConstruct");
@@ -301,7 +299,7 @@ and pattern_desc_to_yojson (p : pattern_desc) : Yojson.Safe.t =
   ]
   | Ppat_array p -> `Assoc [
     ("tag", `String "PpatArray");
-    ("contents", `List [`List (List.map pattern_to_yojson p)])
+    ("contents", `List (List.map pattern_to_yojson p))
   ]
   | Ppat_or (p1, p2) -> `Assoc [
     ("tag", `String "PpatOr");
@@ -313,23 +311,23 @@ and pattern_desc_to_yojson (p : pattern_desc) : Yojson.Safe.t =
   ]
   | Ppat_type l -> `Assoc [
     ("tag", `String "PpatType");
-    ("contents", `List [Asttypes_serializer.loc_to_yojson Longident_serializer.t_to_yojson l])
+    ("contents", Asttypes_serializer.loc_to_yojson Longident_serializer.t_to_yojson l)
   ]
   | Ppat_lazy p -> `Assoc [
     ("tag", `String "PpatLazy");
-    ("contents", `List [pattern_to_yojson p])
+    ("contents", pattern_to_yojson p)
   ]
   | Ppat_unpack value -> `Assoc [
     ("tag", `String "PpatUnpack");
-    ("contents", `List [Asttypes_serializer.loc_to_yojson (fun x -> `String x) value])
+    ("contents", Asttypes_serializer.loc_to_yojson (fun x -> `String x) value)
   ]
   | Ppat_exception p -> `Assoc [
     ("tag", `String "PpatException");
-    ("contents", `List [pattern_to_yojson p])
+    ("contents", pattern_to_yojson p)
   ]
   | Ppat_extension e -> `Assoc [
     ("tag", `String "PpatExtension");
-    ("contents", `List [extension_to_yojson e])
+    ("contents", extension_to_yojson e)
   ]
   | Ppat_open (loc, p) -> `Assoc [
     ("tag", `String "PpatOpen");
@@ -355,11 +353,11 @@ and expression_desc_to_yojson (e : expression_desc) : Yojson.Safe.t =
   match e with
   | Pexp_ident loc -> `Assoc [
     ("tag", `String "PexpIdent");
-    ("contents", `List [Asttypes_serializer.loc_to_yojson Longident_serializer.t_to_yojson loc])
+    ("contents", Asttypes_serializer.loc_to_yojson Longident_serializer.t_to_yojson loc)
   ]
   | Pexp_constant c -> `Assoc [
     ("tag", `String "PexpConstant");
-    ("contents", `List [constant_to_yojson c])
+    ("contents", constant_to_yojson c)
   ]
   | Pexp_let (rf, v, e) -> `Assoc [
     ("tag", `String "PexpLet");
@@ -371,7 +369,7 @@ and expression_desc_to_yojson (e : expression_desc) : Yojson.Safe.t =
   ]
   | Pexp_function c -> `Assoc [
     ("tag", `String "PexpFunction");
-    ("contents", `List [`List (List.map case_to_yojson c)])
+    ("contents", `List (List.map case_to_yojson c))
   ]
   | Pexp_fun (l, d, p, e) -> `Assoc [
     ("tag", `String "PexpFun");
@@ -410,7 +408,7 @@ and expression_desc_to_yojson (e : expression_desc) : Yojson.Safe.t =
   ]
   | Pexp_tuple l -> `Assoc [
     ("tag", `String "PexpTuple");
-    ("contents", `List [`List (List.map expression_to_yojson l)])
+    ("contents", `List (List.map expression_to_yojson l))
   ]
   | Pexp_construct (loc, e) -> `Assoc [
     ("tag", `String "PexpConstruct");
@@ -459,7 +457,7 @@ and expression_desc_to_yojson (e : expression_desc) : Yojson.Safe.t =
   ]
   | Pexp_array l -> `Assoc [
     ("tag", `String "PexpArray");
-    ("contents", `List [`List (List.map expression_to_yojson l)])
+    ("contents", `List (List.map expression_to_yojson l))
   ]
   | Pexp_ifthenelse (e1, e2, e3) -> `Assoc [
     ("tag", `String "PexpIfThenElse");
@@ -510,7 +508,7 @@ and expression_desc_to_yojson (e : expression_desc) : Yojson.Safe.t =
   ]
   | Pexp_new loc -> `Assoc [
     ("tag", `String "PexpNew");
-    ("contents", `List [Asttypes_serializer.loc_to_yojson Longident_serializer.t_to_yojson loc])
+    ("contents", Asttypes_serializer.loc_to_yojson Longident_serializer.t_to_yojson loc)
   ]
   | Pexp_setinstvar (loc, e) -> `Assoc [
     ("tag", `String "PexpSetinstvar");
@@ -545,22 +543,22 @@ and expression_desc_to_yojson (e : expression_desc) : Yojson.Safe.t =
   ]
   | Pexp_assert e -> `Assoc [
     ("tag", `String "PexpAssert");
-    ("contents", `List [expression_to_yojson e])
+    ("contents", expression_to_yojson e)
   ]
   | Pexp_lazy e -> `Assoc [
     ("tag", `String "PexpLazy");
-    ("contents", `List [expression_to_yojson e])
+    ("contents", expression_to_yojson e)
   ]
   | Pexp_poly (e, t) -> `Assoc [
     ("tag", `String "PexpPoly");
     ("contents", `List [
-      expression_to_yojson e; 
+      expression_to_yojson e;
       (match t with None -> `Null | Some t -> core_type_to_yojson t)
     ])
   ]
   | Pexp_object o -> `Assoc [
     ("tag", `String "PexpObject");
-    ("contents", `List [class_structure_to_yojson o])
+    ("contents", class_structure_to_yojson o)
   ]
   | Pexp_newtype (loc, e) -> `Assoc [
     ("tag", `String "PexpNewtype");
@@ -571,7 +569,7 @@ and expression_desc_to_yojson (e : expression_desc) : Yojson.Safe.t =
   ]
   | Pexp_pack me -> `Assoc [
     ("tag", `String "PexpPack");
-    ("contents", `List [module_expr_to_yojson me])
+    ("contents", module_expr_to_yojson me)
   ]
   | Pexp_open (ovf ,loc, e) -> `Assoc [
     ("tag", `String "PexpOpen");
@@ -583,7 +581,7 @@ and expression_desc_to_yojson (e : expression_desc) : Yojson.Safe.t =
   ]
   | Pexp_extension e -> `Assoc [
     ("tag", `String "PexpExtension");
-    ("contents", `List [extension_to_yojson e])
+    ("contents", extension_to_yojson e)
   ]
   | Pexp_unreachable -> `Assoc [
     ("tag", `String "PexpUnreachable")
@@ -619,12 +617,12 @@ and type_declaration_to_yojson (t : type_declaration) : Yojson.Safe.t =
   `Assoc [
     ("tag", `String "TypeDeclaration");
     ("ptypeName", Asttypes_serializer.loc_to_yojson (fun x -> `String x) t.ptype_name);
-    ("ptypeParams", `List (List.map (fun (t, v) -> 
-      `List 
-      [core_type_to_yojson t; 
-      Asttypes_serializer.variance_to_yojson v]) 
+    ("ptypeParams", `List (List.map (fun (t, v) ->
+      `List
+      [core_type_to_yojson t;
+      Asttypes_serializer.variance_to_yojson v])
       t.ptype_params));
-    ("ptypeCstrs", `List (List.map (fun (t1, t2, l) -> 
+    ("ptypeCstrs", `List (List.map (fun (t1, t2, l) ->
       `List
       [
         core_type_to_yojson t1;
@@ -705,9 +703,9 @@ and type_extension_to_yojson (t : type_extension) : Yojson.Safe.t =
   `Assoc [
     ("tag", `String "TypeExtension");
     ("ptyextPath", Asttypes_serializer.loc_to_yojson Longident_serializer.t_to_yojson t.ptyext_path);
-    ("ptyextParams", `List (List.map (fun (t, v) -> 
-      `List 
-      [ core_type_to_yojson t; 
+    ("ptyextParams", `List (List.map (fun (t, v) ->
+      `List
+      [ core_type_to_yojson t;
         Asttypes_serializer.variance_to_yojson v
       ])
       t.ptyext_params));
@@ -742,7 +740,7 @@ and extension_constructor_kind_to_yojson (e : extension_constructor_kind) : Yojs
   ]
   | Pext_rebind loc -> `Assoc [
     ("tag", `String "PextRebind");
-    ("contents", `List [Asttypes_serializer.loc_to_yojson Longident_serializer.t_to_yojson loc])
+    ("contents", Asttypes_serializer.loc_to_yojson Longident_serializer.t_to_yojson loc)
   ]
 
 (* Type ClassType *)
@@ -768,7 +766,7 @@ and class_type_desc_to_yojson (c : class_type_desc) : Yojson.Safe.t =
   ]
   | Pcty_signature l -> `Assoc [
     ("tag", `String "PctySignature");
-    ("contents", `List [class_signature_to_yojson l])
+    ("contents", class_signature_to_yojson l)
   ]
   | Pcty_arrow (l, c1, c2) -> `Assoc [
     ("tag", `String "PctyArrow");
@@ -780,7 +778,7 @@ and class_type_desc_to_yojson (c : class_type_desc) : Yojson.Safe.t =
   ]
   | Pcty_extension e -> `Assoc [
     ("tag", `String "PctyExtension");
-    ("contents", `List [extension_to_yojson e])
+    ("contents", extension_to_yojson e)
   ]
   | Pcty_open (ovf, loc, c) -> `Assoc [
     ("tag", `String "PctyOpen");
@@ -816,7 +814,7 @@ and class_type_field_desc_to_yojson (c : class_type_field_desc) : Yojson.Safe.t 
   match c with
   | Pctf_inherit c -> `Assoc [
     ("tag", `String "PctfInherit");
-    ("contents", `List [class_type_to_yojson c])
+    ("contents", class_type_to_yojson c)
   ]
   | Pctf_val (loc, m, v, c) -> `Assoc [
     ("tag", `String "PctfVal");
@@ -842,11 +840,11 @@ and class_type_field_desc_to_yojson (c : class_type_field_desc) : Yojson.Safe.t 
   ]
   | Pctf_attribute a -> `Assoc [
     ("tag", `String "PctfAttribute");
-    ("contents", `List [attribute_to_yojson a])
+    ("contents", attribute_to_yojson a)
   ]
   | Pctf_extension e -> `Assoc [
     ("tag", `String "PctfExtension");
-    ("contents", `List [extension_to_yojson e])
+    ("contents", extension_to_yojson e)
   ]
 
 (* Type ClassInfos *)
@@ -855,10 +853,10 @@ and class_infos_to_yojson (f : 'a -> Yojson.Safe.t) (c : 'a class_infos) : Yojso
   `Assoc [
     ("tag", `String "ClassInfos");
     ("pciVirt", Asttypes_serializer.virtual_flag_to_yojson c.pci_virt);
-    ("pciParams", `List (List.map (fun (t, v) -> 
-      `List 
-      [core_type_to_yojson t; 
-      Asttypes_serializer.variance_to_yojson v]) 
+    ("pciParams", `List (List.map (fun (t, v) ->
+      `List
+      [core_type_to_yojson t;
+      Asttypes_serializer.variance_to_yojson v])
       c.pci_params));
     ("pciName", Asttypes_serializer.loc_to_yojson (fun x -> `String x) c.pci_name);
     ("pciExpr", f c.pci_expr);
@@ -894,7 +892,7 @@ and class_expr_desc_to_yojson (c : class_expr_desc) : Yojson.Safe.t =
   ]
   | Pcl_structure c -> `Assoc [
     ("tag", `String "PclStructure");
-    ("contents", `List [class_structure_to_yojson c])
+    ("contents", class_structure_to_yojson c)
   ]
   | Pcl_fun (l, e, p, c) -> `Assoc [
     ("tag", `String "PclFun");
@@ -931,7 +929,7 @@ and class_expr_desc_to_yojson (c : class_expr_desc) : Yojson.Safe.t =
   ]
   | Pcl_extension e -> `Assoc [
     ("tag", `String "PclExtension");
-    ("contents", `List [extension_to_yojson e])
+    ("contents", extension_to_yojson e)
   ]
   | Pcl_open (ovf, loc, c) -> `Assoc [
     ("tag", `String "PclOpen");
@@ -991,15 +989,15 @@ and class_field_desc_to_yojson (c : class_field_desc) : Yojson.Safe.t =
   ]
   | Pcf_initializer e -> `Assoc [
     ("tag", `String "PcfInitializer");
-    ("contents", `List [expression_to_yojson e])
+    ("contents", expression_to_yojson e)
   ]
   | Pcf_attribute a -> `Assoc [
     ("tag", `String "PcfAttribute");
-    ("contents", `List [attribute_to_yojson a])
+    ("contents", attribute_to_yojson a)
   ]
   | Pcf_extension e -> `Assoc [
     ("tag", `String "PcfExtension");
-    ("contents", `List [extension_to_yojson e])
+    ("contents", extension_to_yojson e)
   ]
 
 (* Type ClassFieldKind *)
@@ -1008,7 +1006,7 @@ and class_field_kind_to_yojson (c : class_field_kind) : Yojson.Safe.t =
   match c with
   | Cfk_virtual t -> `Assoc [
     ("tag", `String "CfkVirtual");
-    ("contents", `List [core_type_to_yojson t])
+    ("contents", core_type_to_yojson t)
   ]
   | Cfk_concrete (ovf, e) -> `Assoc [
     ("tag", `String "CfkConcrete");
@@ -1034,11 +1032,11 @@ and module_type_desc_to_yojson (m : module_type_desc) : Yojson.Safe.t =
   match m with
   | Pmty_ident loc -> `Assoc [
     ("tag", `String "PmtyIdent");
-    ("contents", `List [Asttypes_serializer.loc_to_yojson Longident_serializer.t_to_yojson loc])
+    ("contents", Asttypes_serializer.loc_to_yojson Longident_serializer.t_to_yojson loc)
   ]
   | Pmty_signature s -> `Assoc [
     ("tag", `String "PmtySignature");
-    ("contents", `List [signature_to_yojson s])
+    ("contents", signature_to_yojson s)
   ]
   | Pmty_functor (loc, mt1, mt2) -> `Assoc [
     ("tag", `String "PmtyFunctor");
@@ -1057,15 +1055,15 @@ and module_type_desc_to_yojson (m : module_type_desc) : Yojson.Safe.t =
   ]
   | Pmty_typeof me -> `Assoc [
     ("tag", `String "PmtyTypeOf");
-    ("contents", `List [module_expr_to_yojson me])
+    ("contents", module_expr_to_yojson me)
   ]
   | Pmty_extension e -> `Assoc [
     ("tag", `String "PmtyExtension");
-    ("contents", `List [extension_to_yojson e])
+    ("contents", extension_to_yojson e)
   ]
   | Pmty_alias loc -> `Assoc [
     ("tag", `String "PmtyAlias");
-    ("contents", `List [Asttypes_serializer.loc_to_yojson Longident_serializer.t_to_yojson loc])
+    ("contents", Asttypes_serializer.loc_to_yojson Longident_serializer.t_to_yojson loc)
   ]
 
 (* Type Signature *)
@@ -1088,7 +1086,7 @@ and signature_item_desc_to_yojson (s : signature_item_desc) : Yojson.Safe.t =
   match s with
   | Psig_value v -> `Assoc [
     ("tag", `String "PsigValue");
-    ("contents", `List [value_description_to_yojson v])
+    ("contents", value_description_to_yojson v)
   ]
   | Psig_type (rf, l) -> `Assoc [
     ("tag", `String "PsigType");
@@ -1099,31 +1097,31 @@ and signature_item_desc_to_yojson (s : signature_item_desc) : Yojson.Safe.t =
   ]
   | Psig_typext te -> `Assoc [
     ("tag", `String "PsigTypExt");
-    ("contents", `List [type_extension_to_yojson te])
+    ("contents", type_extension_to_yojson te)
   ]
   | Psig_exception e -> `Assoc [
     ("tag", `String "PsigException");
-    ("contents", `List [extension_constructor_to_yojson e])
+    ("contents", extension_constructor_to_yojson e)
   ]
   | Psig_module m -> `Assoc [
     ("tag", `String "PsigModule");
-    ("contents", `List [module_declaration_to_yojson m])
+    ("contents", module_declaration_to_yojson m)
   ]
   | Psig_recmodule l -> `Assoc [
     ("tag", `String "PsigRecModule");
-    ("contents", `List [`List (List.map module_declaration_to_yojson l)])
+    ("contents", `List (List.map module_declaration_to_yojson l))
   ]
   | Psig_modtype m -> `Assoc [
     ("tag", `String "PsigModType");
-    ("contents", `List [module_type_declaration_to_yojson m])
+    ("contents", module_type_declaration_to_yojson m)
   ]
   | Psig_open od -> `Assoc [
     ("tag", `String "PsigOpen");
-    ("contents", `List [open_description_to_yojson od])
+    ("contents", open_description_to_yojson od)
   ]
   | Psig_include id -> `Assoc [
     ("tag", `String "PsigInclude");
-    ("contents", `List [include_description_to_yojson id])
+    ("contents", include_description_to_yojson id)
   ]
   | Psig_class _u -> `Assoc [
     ("tag", `String "PsigClass");
@@ -1131,13 +1129,11 @@ and signature_item_desc_to_yojson (s : signature_item_desc) : Yojson.Safe.t =
   ]
   | Psig_class_type l -> `Assoc [
     ("tag", `String "PsigClassType");
-    ("contents", `List [
-      `List (List.map class_type_declaration_to_yojson l)
-    ])
+    ("contents", `List (List.map class_type_declaration_to_yojson l))
   ]
   | Psig_attribute a -> `Assoc [
     ("tag", `String "PsigAttribute");
-    ("contents", `List [attribute_to_yojson a])
+    ("contents", attribute_to_yojson a)
   ]
   | Psig_extension (e, a) -> `Assoc [
     ("tag", `String "PsigExtension");
@@ -1259,11 +1255,11 @@ and module_expr_desc_to_yojson (m : module_expr_desc) : Yojson.Safe.t =
   match m with
   | Pmod_ident loc -> `Assoc [
     ("tag", `String "PmodIdent");
-    ("contents", `List [Asttypes_serializer.loc_to_yojson Longident_serializer.t_to_yojson loc])
+    ("contents", Asttypes_serializer.loc_to_yojson Longident_serializer.t_to_yojson loc)
   ]
   | Pmod_structure s -> `Assoc [
     ("tag", `String "PmodStructure");
-    ("contents", `List [structure_to_yojson s])
+    ("contents", structure_to_yojson s)
   ]
   | Pmod_functor (loc, mt, me) -> `Assoc [
     ("tag", `String "PmodFunctor");
@@ -1283,11 +1279,11 @@ and module_expr_desc_to_yojson (m : module_expr_desc) : Yojson.Safe.t =
   ]
   | Pmod_unpack e -> `Assoc [
     ("tag", `String "PmodUnpack");
-    ("contents", `List [expression_to_yojson e])
+    ("contents", expression_to_yojson e)
   ]
   | Pmod_extension e -> `Assoc [
     ("tag", `String "PmodExtension");
-    ("contents", `List [extension_to_yojson e])
+    ("contents", extension_to_yojson e)
   ]
 
 (* Type Structure *)
@@ -1321,7 +1317,7 @@ and structure_item_desc_to_yojson (s : structure_item_desc) : Yojson.Safe.t =
   ]
   | Pstr_primitive v -> `Assoc [
     ("tag", `String "PstrPrimitive");
-    ("contents", `List [value_description_to_yojson v])
+    ("contents", value_description_to_yojson v)
   ]
   | Pstr_type (rf, l) -> `Assoc [
     ("tag", `String "PstrType");
@@ -1332,27 +1328,27 @@ and structure_item_desc_to_yojson (s : structure_item_desc) : Yojson.Safe.t =
   ]
   | Pstr_typext te -> `Assoc [
     ("tag", `String "PstrTypExt");
-    ("contents", `List [type_extension_to_yojson te])
+    ("contents", type_extension_to_yojson te)
   ]
   | Pstr_exception e -> `Assoc [
     ("tag", `String "PstrException");
-    ("contents", `List [extension_constructor_to_yojson e])
+    ("contents", extension_constructor_to_yojson e)
   ]
   | Pstr_module m -> `Assoc [
     ("tag", `String "PstrModule");
-    ("contents", `List [module_binding_to_yojson m])
+    ("contents", module_binding_to_yojson m)
   ]
   | Pstr_recmodule l -> `Assoc [
     ("tag", `String "PstrRecModule");
-    ("contents", `List [`List (List.map module_binding_to_yojson l)])
+    ("contents", `List (List.map module_binding_to_yojson l))
   ]
   | Pstr_modtype m -> `Assoc [
     ("tag", `String "PstrModType");
-    ("contents", `List [module_type_declaration_to_yojson m])
+    ("contents", module_type_declaration_to_yojson m)
   ]
   | Pstr_open o -> `Assoc [
     ("tag", `String "PstrOpen");
-    ("contents", `List [open_description_to_yojson o])
+    ("contents", open_description_to_yojson o)
   ]
   | Pstr_class _u -> `Assoc [
     ("tag", `String "PstrClass");
@@ -1360,17 +1356,15 @@ and structure_item_desc_to_yojson (s : structure_item_desc) : Yojson.Safe.t =
   ]
   | Pstr_class_type l -> `Assoc [
     ("tag", `String "PstrClassType");
-    ("contents", `List [
-      `List (List.map class_type_declaration_to_yojson l)
-    ])
+    ("contents", `List (List.map class_type_declaration_to_yojson l))
   ]
   | Pstr_include id -> `Assoc [
     ("tag", `String "PstrInclude");
-    ("contents", `List [include_declaration_to_yojson id])
+    ("contents", include_declaration_to_yojson id)
   ]
   | Pstr_attribute a -> `Assoc [
     ("tag", `String "PstrAttribute");
-    ("contents", `List [attribute_to_yojson a])
+    ("contents", attribute_to_yojson a)
   ]
   | Pstr_extension (e, a) -> `Assoc [
     ("tag", `String "PstrExtension");
