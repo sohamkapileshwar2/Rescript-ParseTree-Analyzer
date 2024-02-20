@@ -120,10 +120,18 @@ let parseInterfaceFromSource ~forPrinter ~displayFilename ~source =
     comments = List.rev engine.comments;
   }
 
+let store_string_as_file filename str _constant =
+  let json_str = str in
+  let oc = open_out filename in
+  output_string oc json_str;
+  close_out oc
+  
 let printEngine =
   {
     printImplementation =
       (fun ~width ~filename:_ ~comments structure ->
+        let xx = Res_printer.printImplementation ~width structure ~comments in
+        store_string_as_file "temp.res" xx 0;
         print_string
           (Res_printer.printImplementation ~width structure ~comments));
     printInterface =

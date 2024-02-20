@@ -1,4 +1,4 @@
-(* open Res_driver
+(* (* open Res_driver
 open Parsetree
 open Yojson
 (* open Yojson.Basic *)
@@ -41,31 +41,6 @@ open Parsetree
 open Parsetree_serializer
 open Res_driver
 
-(* type nestedName = {
-  firstName : string;
-  lastName : string;
-}
-
-let nestedName_to_yojson (nestedName : nestedName) : Yojson.Safe.t =
-  `Assoc [
-    ("firstName", `String nestedName.firstName);
-    ("lastName", `String nestedName.lastName);
-  ]
-
-type person = {
-  name : nestedName;
-  age : int;
-  }
-
-let person_to_yojson (person : person) : Yojson.Safe.t =
-  `Assoc [
-    ("name", nestedName_to_yojson person.name);
-    ("age", `Int person.age);
-  ] *)
-
-(* Convert nestedName to JSON *)
-
-(* Example person *)
 let my_name = { firstName = "Alice"; lastName = "Smith" }
 let _my_person =
   { name = my_name;
@@ -86,17 +61,6 @@ let _my_attribute : attribute = ({
     }
   }, PSig [])
 
-(* Convert nestedName to JSON *)
-(* let x = nestedName_to_yojson my_name *)
-
-(* Convert person to JSON *)
-(* let xx = person_to_yojson my_person *)
-
-(* Convert person to JSON and store in a file *)
-(* Convert person to JSON *)
-(* let xx = person_to_yojson my_person *)
-
-(* Convert person to JSON and store in a file *)
 let store_person_as_json_file filename result =
   let json_str = Yojson.Safe.to_string (structure_to_yojson result) in
   let oc = open_out filename in
@@ -120,4 +84,28 @@ let () =
   Printf.eprintf "Filename: %s \n" file_name;
   (* let parsed_ast = parse_file file_name in *)
   (* List.iter print_structure_item parsed_ast *)
-  parse_file file_name
+  parse_file file_name *)
+
+open Res_driver
+
+let _store_string_as_file filename str _constant =
+  let json_str = str in
+  let oc = open_out filename in
+  output_string oc json_str;
+  close_out oc
+
+
+let parse_file file_name =
+  let ic = open_in file_name in
+  let _lexbuf = Lexing.from_channel ic in
+  let parseResult = Res_driver.parsingEngine.parseImplementation ~forPrinter:false ~filename:file_name in
+  parseResult
+
+let () =
+  let parsetree = parse_file "sample_rescript.res" in
+  Res_driver.printEngine.printImplementation
+    ~width:4
+    ~filename:"xxx.res"
+    ~comments:[]
+    parsetree.parsetree;
+  print_endline "Done!"
