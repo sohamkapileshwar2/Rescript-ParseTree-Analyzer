@@ -29,10 +29,10 @@ executable haskellRescriptTypes
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends:
-        base ^>=4.16.4.0,
+        base ^>=4.16,
         haskell-say,
         aeson ^>=2.2,
-        text,
-        bytestring
+        text ^>=2.1,
+        bytestring ^>=0.12
     hs-source-dirs: app
     default-language: Haskell2010
