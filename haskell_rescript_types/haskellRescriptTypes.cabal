@@ -29,7 +29,7 @@ executable haskellRescriptTypes
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends:
-        base ^>=4.16,
+        base,
         haskell-say,
         aeson ^>=2.2,
         text ^>=2.1,

@@ -872,7 +872,7 @@ instance FromJSON Variance where
 
 importParseTree :: IO ()
 importParseTree = do
-  jsonData <- readFile "res.json"
+  jsonData <- readFile "rescript_parsetree.json"
   -- print jsonData
   let parseTree = eitherDecode $ LBS.fromStrict $ TE.encodeUtf8 $ T.pack jsonData :: Either String Structure
   case parseTree of

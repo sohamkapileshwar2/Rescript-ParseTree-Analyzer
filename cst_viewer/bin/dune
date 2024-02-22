@@ -1,8 +1,8 @@
 (executable
  (public_name cst_viewer)
  (name main)
- (libraries cst_viewer syntax )
- (preprocess (pps ppx_deriving_yojson)))
+ (libraries cst_viewer syntax)
+)
 
 (dirs syntax ml js_parser ext)
 
