@@ -86,6 +86,8 @@ let () =
   (* List.iter print_structure_item parsed_ast *)
   parse_file file_name *)
 
+(* THIS IS START TESTING FOR PRETTY PRINT *)
+(*
 open Res_driver
 
 let _store_string_as_file filename str _constant =
@@ -109,3 +111,73 @@ let () =
     ~comments:[]
     parsetree.parsetree;
   print_endline "Done!"
+*)
+(* THIS IS END TESTING FOR PRETTY PRINT *)
+(* open Yojson.Basic *)
+
+(* This is for testing fromjson start here *)
+(*
+open Yojson.Basic.Util
+open Printf
+
+type author = {
+  name : string;
+  affiliation : string;
+}
+
+type books = {
+  title : string;
+  tags : string list;
+  pages : int;
+  authors : author list;
+  is_online : bool option;
+}
+
+let author_of_json json =
+  {
+    name = json |> member "name" |> to_string;
+    affiliation = json |> member "affiliation" |> to_string;
+  }
+
+let books_of_json json =
+  {
+    title = json |> member "title" |> to_string;
+    tags = json |> member "tags" |> to_list |> filter_string;
+    pages = json |> member "pages" |> to_int;
+    authors = json |> member "authors" |> to_list |> List.map author_of_json;
+    is_online = json |> member "is_online" |> to_bool_option;
+  }
+
+
+let () =
+  try
+    let json = Yojson.Basic.from_file "books.json" in
+    let my_books = books_of_json json in
+    printf "Title: %s (%d)\n" my_books.title my_books.pages;
+    printf "Authors: %s\n" (String.concat ", " (List.map (fun a -> a.name ^ " (" ^ a.affiliation ^ ")") my_books.authors));  (* Include affiliation in output *)
+    printf "Tags: %s\n" (String.concat ", " my_books.tags);
+    let string_of_bool_option =
+      function
+      | None -> "<unknown>"
+      | Some true -> "yes"
+      | Some false -> "no" in
+    printf "Online: %s\n" (string_of_bool_option my_books.is_online);
+  with
+  | Sys_error msg -> Printf.eprintf "Error: %s\n" msg
+
+*)
+(* This is for testing fromjson end here *)
+
+(* open Yojson.Basic.Util *)
+
+type personxx = {
+name : string;
+  age : int;
+}
+[@@deriving yojson]
+
+
+let () = 
+  let json = Yojson.Safe.from_file "constant.json" in
+  let my_books = Parsetree_deserializer2.constant_of_yojson json in
+  print_endline (Yojson.Safe.to_string (Parsetree_serializer.constant_to_yojson my_books))
