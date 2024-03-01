@@ -32,7 +32,7 @@ let constant_of_yojson (json : Yojson.Safe.t) : Parsetree.constant =
 let rec attribute_of_yojson (json : Yojson.Safe.t) : attribute =
   match json with
   | `List [loc_json; payload_json] ->
-    let loc = Asttypes_deserializer.loc_of_yojson loc_json in
+    let loc = Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) loc_json in
     let payload = payload_of_yojson payload_json in
     (loc, payload)
   | _ -> failwith "Invalid JSON format for attribute"
@@ -40,7 +40,7 @@ let rec attribute_of_yojson (json : Yojson.Safe.t) : attribute =
 and extension_of_yojson (json : Yojson.Safe.t) : extension =
   match json with
   | `List [loc_json; payload_json] ->
-    let loc = Asttypes_deserializer.loc_of_yojson loc_json in
+    let loc = Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) loc_json in
     let payload = payload_of_yojson payload_json in
     (loc, payload)
   | _ -> failwith "Invalid JSON format for extension"
@@ -145,4 +145,1083 @@ and core_type_desc_of_yojson (json : Yojson.Safe.t) : core_type_desc =
   | `Assoc [("tag", `String "PtypPackage"); ("contents", jsons)] -> package_type_of_yojson jsons
   | `Assoc [("tag", `String "PtypExtension"); ("contents", jsons)] -> extension_of_yojson jsons
   | _ -> failwith "Invalid JSON format for core_type_desc"
+  
+and package_type_of_yojson (json : Yojson.Safe.t) : package_type =
+    match json with
+    | `List [loc_json; items_json] ->
+      let loc = Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson loc_json in
+      let items = 
+        match items_json with
+        | `List l ->
+          List.map (fun item ->
+            match item with
+            | `List [loc_item_json; core_type_json] ->
+              let loc_item = Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson loc_item_json in
+              let core_type = core_type_of_yojson core_type_json in
+              (loc_item, core_type)
+            | _ -> failwith "Invalid JSON format for package_type item"
+          ) l
+        | _ -> failwith "Invalid JSON format for package_type items"
+      in
+      (loc, items)
+    | _ -> failwith "Invalid JSON format for package_type"
+
+and row_field_of_yojson (json : Yojson.Safe.t) : row_field =
+  match json with
+  | `Assoc [("tag", `String "Rtag"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [label_loc_json; attributes_json; (`Bool bool); (`List core_types_json)] ->
+       let label_loc = Asttypes_deserializer.loc_of_yojson Asttypes_deserializer.label_of_yojson label_loc_json in
+       let attributes = attributes_of_yojson attributes_json in
+       let core_types = List.map core_type_of_yojson core_types_json in
+       Rtag (label_loc, attributes, bool, core_types)
+     | _ -> failwith "Invalid JSON format for Rtag")
+  | `Assoc [("tag", `String "Rinherit"); ("contents", json)] ->
+    (match json with
+     | `List [core_type_json] ->
+       let core_type = core_type_of_yojson core_type_json in
+       Rinherit core_type
+     | _ -> failwith "Invalid JSON format for Rinherit")
+  | _ -> failwith "Invalid JSON format for row_field"
+
+and object_field_of_yojson (json : Yojson.Safe.t) : object_field =
+  match json with
+  | `Assoc [("tag", `String "Otag"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [label_loc_json; attributes_json; core_type_json] ->
+       let label_loc = Asttypes_deserializer.loc_of_yojson Asttypes_deserializer.label_of_yojson label_loc_json in
+       let attributes = attributes_of_yojson attributes_json in
+       let core_type = core_type_of_yojson core_type_json in
+       Otag (label_loc, attributes, core_type)
+     | _ -> failwith "Invalid JSON format for Otag")
+  | `Assoc [("tag", `String "Oinherit"); ("contents", json)] ->
+    (match json with
+     | `List [core_type_json] ->
+       let core_type = core_type_of_yojson core_type_json in
+       Oinherit core_type
+     | _ -> failwith "Invalid JSON format for Oinherit")
+  | _ -> failwith "Invalid JSON format for object_field"
+
+and pattern_of_yojson (json : Yojson.Safe.t) : pattern =
+  match json with
+  | `Assoc fields ->
+    {
+      ppat_desc = Yojson.Safe.Util.(`Assoc fields |> member "ppatDesc" |> pattern_desc_of_yojson);
+      ppat_loc = Yojson.Safe.Util.(`Assoc fields |> member "ppatLoc" |> Location_deserializer.t_of_yojson);
+      ppat_attributes = Yojson.Safe.Util.(`Assoc fields |> member "ppatAttributes" |> attributes_of_yojson);
+    }
+  | _ -> failwith "Invalid JSON format for pattern"
+
+and pattern_desc_of_yojson (json : Yojson.Safe.t) : pattern_desc =
+  match json with
+  | `Assoc [("tag", `String "PpatAny")] -> Ppat_any
+  | `Assoc [("tag", `String "PpatVar"); ("contents", json)] -> Ppat_var (Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) json)
+  | `Assoc [("tag", `String "PpatAlias"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [pattern_json; loc] ->
+       let pattern = pattern_of_yojson pattern_json in
+       let loc_x = Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) loc in
+       Ppat_alias (pattern, loc_x)
+     | _ -> failwith "Invalid JSON format for Ppat_alias")
+  | `Assoc [("tag", `String "PpatConstant"); ("contents", json)] -> Ppat_constant (constant_of_yojson json)
+  | `Assoc [("tag", `String "PpatInterval"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [constant1_json; constant2_json] ->
+       let constant1 = constant_of_yojson constant1_json in
+       let constant2 = constant_of_yojson constant2_json in
+       Ppat_interval (constant1, constant2)
+     | _ -> failwith "Invalid JSON format for Ppat_interval")
+  | `Assoc [("tag", `String "PpatTuple"); ("contents", jsons)] ->
+    (match jsons with
+     | `List patterns_json -> Ppat_tuple (List.map pattern_of_yojson patterns_json)
+     | _ -> failwith "Invalid JSON format for Ppat_tuple")
+  | `Assoc [("tag", `String "PpatConstruct"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [longident_loc_json; option_pattern_json] ->
+       let longident_loc = Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson longident_loc_json in
+       let option_pattern =
+         match option_pattern_json with
+         | `Null -> None
+         | _ -> Some (pattern_of_yojson option_pattern_json)
+       in
+       Ppat_construct (longident_loc, option_pattern)
+     | _ -> failwith "Invalid JSON format for Ppat_construct")
+  | `Assoc [("tag", `String "PpatVariant"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [label_loc_json; option_pattern_json] ->
+       let label_loc = Asttypes_deserializer.label_of_yojson label_loc_json in
+       let option_pattern =
+         match option_pattern_json with
+         | `Null -> None
+         | _ -> Some (pattern_of_yojson option_pattern_json)
+       in
+       Ppat_variant (label_loc, option_pattern)
+     | _ -> failwith "Invalid JSON format for Ppat_variant")
+  | `Assoc [("tag", `String "PpatRecord"); ("contents", jsons)] ->
+    (match jsons with
+      | `List [`List record_fields_json; cflag] -> 
+        let loc_record_fields = List.map (fun json -> 
+          match json with
+          | `List [longident_loc_json; pattern_json] ->
+            let longident_loc = Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson longident_loc_json in
+            let pattern = pattern_of_yojson pattern_json in
+            (longident_loc, pattern)
+          | _ -> failwith "Invalid JSON format for record_field"
+        ) record_fields_json in
+        let closed_flag = Asttypes_deserializer.closed_flag_of_yojson cflag in
+        Ppat_record (loc_record_fields, closed_flag)
+      | _ -> failwith "Invalid JSON format for Ppat_record")
+  | `Assoc [("tag", `String "PpatArray"); ("contents", jsons)] ->
+    (match jsons with
+      | `List patterns_json -> Ppat_array (List.map pattern_of_yojson patterns_json)
+      | _ -> failwith "Invalid JSON format for Ppat_array")
+  | `Assoc [("tag", `String "PpatOr"); ("contents", jsons)] ->
+    (match jsons with
+      | `List [pattern1_json; pattern2_json] ->
+        let pattern1 = pattern_of_yojson pattern1_json in
+        let pattern2 = pattern_of_yojson pattern2_json in
+        Ppat_or (pattern1, pattern2)
+      | _ -> failwith "Invalid JSON format for Ppat_or")
+  | `Assoc [("tag", `String "PpatConstraint"); ("contents", jsons)] ->
+    (match jsons with
+      | `List [pattern_json; core_type_json] ->
+        let pattern = pattern_of_yojson pattern_json in
+        let core_type = core_type_of_yojson core_type_json in
+        Ppat_constraint (pattern, core_type)
+      | _ -> failwith "Invalid JSON format for Ppat_constraint")
+  | `Assoc [("tag", `String "PpatType"); ("contents", value)] -> Ppat_type (Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson value)
+  | `Assoc [("tag", `String "PpatLazy"); ("contents", json)] -> Ppat_lazy (pattern_of_yojson json)
+  | `Assoc [("tag", `String "PpatUnpack"); ("contents", value)] -> Ppat_unpack (Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) value)
+  | `Assoc [("tag", `String "PpatException"); ("contents", json)] -> Ppat_exception (pattern_of_yojson json)
+  | `Assoc [("tag", `String "PpatExtension"); ("contents", json)] -> Ppat_extension (extension_of_yojson json)
+  | `Assoc [("tag", `String "PpatOpen"); ("contents", jsons)] -> 
+    (match jsons with
+      | `List [loc; pattern] -> 
+          let loc_type = Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson loc in
+          let pattern_type = pattern_of_yojson pattern in
+        Ppat_open (loc_type, pattern_type)
+      | _ -> failwith "Invalid JSON format for Ppat_open")
+  | _ -> failwith "Invalid JSON format for pattern_desc"
+
+and expression_of_yojson (json : Yojson.Safe.t) : expression =
+  match json with
+  | `Assoc fields ->
+    {
+      pexp_desc = Yojson.Safe.Util.(`Assoc fields |> member "pexpDesc" |> expression_desc_of_yojson);
+      pexp_loc = Yojson.Safe.Util.(`Assoc fields |> member "pexpLoc" |> Location_deserializer.t_of_yojson);
+      pexp_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pexpAttributes" |> attributes_of_yojson);
+    }
+  | _ -> failwith "Invalid JSON format for expression"
+
+and expression_desc_of_yojson (json : Yojson.Safe.t) : expression_desc = 
+  match json with
+  | `Assoc [("tag", `String "PexpIdent"); ("contents", json)] -> Pexp_ident (Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson json)
+  | `Assoc [("tag", `String "PexpConstant"); ("contents", json)] -> Pexp_constant (constant_of_yojson json)
+  |  `Assoc [("tag", `String "PexpLet"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [rec_flag; `List value_bindings_json_arr; expression_json] ->
+       let rec_flag = Asttypes_deserializer.rec_flag_of_yojson rec_flag in
+       let value_bindings = List.map value_bindings_of_yojson value_bindings_json_arr in
+       let expression = expression_of_yojson expression_json in
+       Pexp_let (rec_flag, value_bindings, expression)
+     | _ -> failwith "Invalid JSON format for Pexp_let")
+  | `Assoc [("tag", `String "PexpFunction"); ("contents", `List jsons)] -> Pexp_function (List.map case_of_yojson jsons)
+  | `Assoc [("tag", `String "PexpFun"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [label; default_expr_json; pattern_json; expression_json] ->
+       let label = Asttypes_deserializer.arg_label_of_yojson label in
+       let default_expr =
+         match default_expr_json with
+         | `Null -> None
+         | _ -> Some (expression_of_yojson default_expr_json)
+       in
+       let pattern = pattern_of_yojson pattern_json in
+       let expression = expression_of_yojson expression_json in
+       Pexp_fun (label, default_expr, pattern, expression)
+     | _ -> failwith "Invalid JSON format for Pexp_fun")
+  | `Assoc [("tag", `String "PexpApply"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [expression_json; `List exp_arr] ->
+       let expression = expression_of_yojson expression_json in
+       let exp = List.map (fun json -> 
+        match json with
+        | `List [arg; exp] ->
+            let arg_type = Asttypes_deserializer.arg_label_of_yojson arg in
+            let exp_type = expression_of_yojson exp in
+            (arg_type, exp_type)
+        | _ -> failwith "Invalid JSON format for Pexp_apply") exp_arr in
+       Pexp_apply (expression,exp)
+     | _ -> failwith "Invalid JSON format for Pexp_apply")
+  | `Assoc [("tag", `String "PexpMatch"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [expression_json; `List case_jsons] ->
+       let expression = expression_of_yojson expression_json in
+       let cases = List.map case_of_yojson case_jsons in
+       Pexp_match (expression, cases)
+     | _ -> failwith "Invalid JSON format for Pexp_match")
+  | `Assoc [("tag", `String "PexpTry"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [expression_json; `List case_jsons] ->
+       let expression = expression_of_yojson expression_json in
+       let cases = List.map case_of_yojson case_jsons in
+       Pexp_try (expression, cases)
+     | _ -> failwith "Invalid JSON format for Pexp_try")
+  | `Assoc [("tag", `String "PexpTuple"); ("contents", jsons)] ->
+    (match jsons with
+     | `List expressions_json -> Pexp_tuple (List.map expression_of_yojson expressions_json)
+     | _ -> failwith "Invalid JSON format for Pexp_tuple")
+  | `Assoc [("tag", `String "PexpConstruct"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [longident_loc_json; option_expression_json] ->
+       let longident_loc = Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson longident_loc_json in
+       let option_expression =
+         match option_expression_json with
+         | `Null -> None
+         | _ -> Some (expression_of_yojson option_expression_json)
+       in
+       Pexp_construct (longident_loc, option_expression)
+     | _ -> failwith "Invalid JSON format for Pexp_construct")
+  | `Assoc [("tag", `String "PexpVariant"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [label_loc_json; option_expression_json] ->
+       let label_loc = Asttypes_deserializer.label_of_yojson label_loc_json in
+       let option_expression =
+         match option_expression_json with
+         | `Null -> None
+         | _ -> Some (expression_of_yojson option_expression_json)
+       in
+       Pexp_variant (label_loc, option_expression)
+     | _ -> failwith "Invalid JSON format for Pexp_variant")
+  | `Assoc [("tag", `String "PexpRecord"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [(`List record_fields_json); option_expression_json] ->
+       let record_fields = List.map (fun json ->
+         match json with
+         | `List [longident_loc_json; expression_json] ->
+           let longident_loc = Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson longident_loc_json in
+           let expression = expression_of_yojson expression_json in
+           (longident_loc, expression)
+         | _ -> failwith "Invalid JSON format for record_field"
+       ) record_fields_json in
+       let option_expression =
+         match option_expression_json with
+         | `Null -> None
+         | _ -> Some (expression_of_yojson option_expression_json)
+       in
+       Pexp_record (record_fields, option_expression)
+     | _ -> failwith "Invalid JSON format for Pexp_record")
+  | `Assoc [("tag", `String "PexpField"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [expression_json; longident_loc_json] ->
+       let expression = expression_of_yojson expression_json in
+       let longident_loc = Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson longident_loc_json in
+       Pexp_field (expression, longident_loc)
+     | _ -> failwith "Invalid JSON format for Pexp_field")
+  | `Assoc [("tag", `String "PexpSetField"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [expression1_json; longident_loc_json; expression2_json] ->
+       let expression1 = expression_of_yojson expression1_json in
+       let longident_loc = Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson longident_loc_json in
+       let expression2 = expression_of_yojson expression2_json in
+       Pexp_setfield (expression1, longident_loc, expression2)
+     | _ -> failwith "Invalid JSON format for Pexp_setfield")
+  | `Assoc [("tag", `String "PexpArray"); ("contents", jsons)] ->
+    (match jsons with
+     | `List expressions_json -> Pexp_array (List.map expression_of_yojson expressions_json)
+     | _ -> failwith "Invalid JSON format for Pexp_array")
+  | `Assoc [("tag", `String "PexpIfThenElse"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [expression1_json; expression2_json; expression3_json] ->
+       let expression1 = expression_of_yojson expression1_json in
+       let expression2 = expression_of_yojson expression2_json in
+       let expression3 = match expression3_json with
+         | `Null -> None
+         | _ -> Some (expression_of_yojson expression3_json) in
+       Pexp_ifthenelse (expression1, expression2, expression3)
+     | _ -> failwith "Invalid JSON format for Pexp_ifthenelse")
+  | `Assoc [("tag", `String "PexpSequence"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [expression1_json; expression2_json] ->
+       let expression1 = expression_of_yojson expression1_json in
+       let expression2 = expression_of_yojson expression2_json in
+       Pexp_sequence (expression1, expression2)
+     | _ -> failwith "Invalid JSON format for Pexp_sequence")
+  | `Assoc [("tag", `String "PexpWhile"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [expression1_json; expression2_json] ->
+       let expression1 = expression_of_yojson expression1_json in
+       let expression2 = expression_of_yojson expression2_json in
+       Pexp_while (expression1, expression2)
+     | _ -> failwith "Invalid JSON format for Pexp_while")
+  | `Assoc [("tag", `String "PexpFor"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [pattern_json; expression1_json; expression2_json; direction; expression3_json] ->
+       let pattern = pattern_of_yojson pattern_json in
+       let expression1 = expression_of_yojson expression1_json in
+       let expression2 = expression_of_yojson expression2_json in
+       let direction = Asttypes_deserializer.direction_flag_of_yojson direction in
+       let expression3 = expression_of_yojson expression3_json in
+       Pexp_for (pattern, expression1, expression2, direction, expression3)
+     | _ -> failwith "Invalid JSON format for Pexp_for")
+  | `Assoc [("tag", `String "PexpConstraint"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [expression_json; core_type_json] ->
+       let expression = expression_of_yojson expression_json in
+       let core_type = core_type_of_yojson core_type_json in
+       Pexp_constraint (expression, core_type)
+     | _ -> failwith "Invalid JSON format for Pexp_constraint")
+  | `Assoc [("tag", `String "PexpCoerce"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [expression_json; option_core_type1_json; core_type2_json] ->
+       let expression = expression_of_yojson expression_json in
+       let option_core_type1 =
+         match option_core_type1_json with
+         | `Null -> None
+         | _ -> Some (core_type_of_yojson option_core_type1_json)
+       in
+       let core_type2 = core_type_of_yojson core_type2_json in
+       Pexp_coerce (expression, option_core_type1, core_type2)
+     | _ -> failwith "Invalid JSON format for Pexp_coerce")
+  | `Assoc [("tag", `String "PexpSend"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [expression_json; label_loc_json] ->
+       let expression = expression_of_yojson expression_json in
+       let label_loc = Asttypes_deserializer.loc_of_yojson Asttypes_deserializer.label_of_yojson label_loc_json in
+       Pexp_send (expression, label_loc)
+     | _ -> failwith "Invalid JSON format for Pexp_send")
+  | `Assoc [("tag", `String "PexpNew"); ("contents", json)] -> Pexp_new (Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson json)
+  | `Assoc [("tag", `String "PexpSetInstVar"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [label_loc_json; expression_json] ->
+       let label_loc = Asttypes_deserializer.loc_of_yojson Asttypes_deserializer.label_of_yojson label_loc_json in
+       let expression = expression_of_yojson expression_json in
+       Pexp_setinstvar (label_loc, expression)
+     | _ -> failwith "Invalid JSON format for Pexp_setinstvar")
+  | `Assoc [("tag", `String "PexpOverride"); ("contents", jsons)] ->
+    (match jsons with
+      | `List [contents] ->
+        (match contents with
+          | `List expression_arr -> Pexp_override (List.map (fun json -> 
+              match json with
+              | `List [loc; exp] -> 
+                let loc_type = Asttypes_deserializer.loc_of_yojson Asttypes_deserializer.label_of_yojson loc in
+                let exp_type = expression_of_yojson exp in
+                (loc_type, exp_type)
+              | _ -> failwith "Invalid JSON format for Pexp_override_list"
+              ) expression_arr)
+          | _ -> failwith "Invalid JSON format for Pexp_override")
+      | _ -> failwith "Invalid JSON format for Pexp_override"
+    )
+  | `Assoc [("tag", `String "PexpLetModule"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [loc; module_expr_json; expression_json] ->
+       let loc_type = Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) loc in
+       let module_expr = module_expr_of_yojson module_expr_json in
+       let expression = expression_of_yojson expression_json in
+       Pexp_letmodule (loc_type, module_expr, expression)
+     | _ -> failwith "Invalid JSON format for Pexp_letmodule")
+  | `Assoc [("tag", `String "PexpLetexception"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [extension_constructor_json; expression_json] ->
+       let extension_constructor = extension_constructor_of_yojson extension_constructor_json in
+       let expression = expression_of_yojson expression_json in
+       Pexp_letexception (extension_constructor, expression)
+     | _ -> failwith "Invalid JSON format for Pexp_letexception")
+  | `Assoc [("tag", `String "PexpAssert"); ("contents", json)] -> Pexp_assert (expression_of_yojson json)
+  | `Assoc [("tag", `String "PexpLazy"); ("contents", json)] -> Pexp_lazy (expression_of_yojson json)
+  | `Assoc [("tag", `String "PexpPoly"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [expression_json; core_type_json] ->
+       let expression = expression_of_yojson expression_json in
+       let core_type = 
+        match core_type_json with
+        | `Null -> None
+        | _ -> Some (core_type_of_yojson core_type_json) in
+       Pexp_poly (expression, core_type)
+     | _ -> failwith "Invalid JSON format for Pexp_poly")
+  | `Assoc [("tag", `String "PexpObject"); ("contents", json)] -> Pexp_object (class_structure_of_yojson json)
+  | `Assoc [("tag", `String "PexpNewtype"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [loc; expression_json] ->
+       let loc_type = Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) loc in
+       let expression = expression_of_yojson expression_json in
+       Pexp_newtype (loc_type, expression)
+     | _ -> failwith "Invalid JSON format for Pexp_newtype")
+  | `Assoc [("tag", `String "PexpPack"); ("contents", json)] -> Pexp_pack (module_expr_of_yojson json)
+  | `Assoc [("tag", `String "PexpOpen")] -> 
+    (match json with
+      | `List [loc; longident_loc; expression] -> 
+        let loc_type = Asttypes_deserializer.override_flag_of_yojson loc in
+        let longident_loc_type = Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson longident_loc in
+        let expression_type = expression_of_yojson expression in
+        Pexp_open (loc_type, longident_loc_type, expression_type)
+      | _ -> failwith "Invalid JSON format for Pexp_open")
+  | `Assoc [("tag", `String "PexpExtension"); ("contents", json)] -> Pexp_extension (extension_of_yojson json)
+  | `Assoc [("tag", `String "PexpUnreachable")] -> Pexp_unreachable
+  | _ -> failwith "Invalid JSON format for expression_desc"
+
+and case_of_yojson (json : Yojson.Safe.t) : case =
+  match json with
+  | `Assoc fields ->
+    {
+      pc_lhs = Yojson.Safe.Util.(`Assoc fields |> member "pcLhs" |> pattern_of_yojson);
+      pc_guard = Yojson.Safe.Util.(`Assoc fields |> member "pcGuard" |> (fun x -> match x with
+        | `Null -> None
+        | _ -> Some (expression_of_yojson x)
+      ));
+      pc_rhs = Yojson.Safe.Util.(`Assoc fields |> member "pcRhs" |> expression_of_yojson);
+    }
+  | _ -> failwith "Invalid JSON format for case"
+
+and value_description_of_yojson (json : Yojson.Safe.t) : value_description = 
+  match json with
+  | `Assoc fields ->
+    {
+      pval_name = Yojson.Safe.Util.(`Assoc fields |> member "pvalName" |> (fun x -> Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) x));
+      pval_type = Yojson.Safe.Util.(`Assoc fields |> member "pvalType" |> core_type_of_yojson);
+      pval_prim = Yojson.Safe.Util.(`Assoc fields |> member "pvalPrim" |> (fun x -> match x with
+        | `List x -> List.map (fun x -> Yojson.Safe.Util.to_string x) x
+        | _ -> failwith "Invalid JSON format for pval_prim"
+      ));
+      pval_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pvalAttributes" |> attributes_of_yojson);
+      pval_loc = Yojson.Safe.Util.(`Assoc fields |> member "pvalLoc" |> Location_deserializer.t_of_yojson);
+    }
+  | _ -> failwith "Invalid JSON format for value_description"
+
+and type_declaration_of_yojson (json : Yojson.Safe.t) : type_declaration = 
+  match json with
+  | `Assoc fields ->    
+    {
+      ptype_name = Yojson.Safe.Util.(`Assoc fields |> member "ptypeName" |> (fun x -> Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) x));
+      ptype_params = Yojson.Safe.Util.(`Assoc fields |> member "ptypeParams" |> (fun x -> match x with
+        | `List x_ -> List.map (fun y ->
+          match y with
+          | `List [t; v] -> (core_type_of_yojson t, Asttypes_deserializer.variance_of_yojson v)
+          | _ -> failwith "Invalid JSON format for ptype_params"
+          ) x_
+        | _ -> failwith "Invalid JSON format for ptype_params"
+      ));
+      ptype_cstrs = Yojson.Safe.Util.(`Assoc fields |> member "ptypeCstrs" |> (fun x -> match x with
+        | `List x -> List.map (fun y ->
+          match y with
+          | `List [t1; t2; l] -> (core_type_of_yojson t1, core_type_of_yojson t2, Location_deserializer.t_of_yojson l)
+          | _ -> failwith "Invalid JSON format for ptype_cstrs") x
+        | _ -> failwith "Invalid JSON format for ptype_cstrs"
+      ));
+      ptype_kind = Yojson.Safe.Util.(`Assoc fields |> member "ptypeKind" |> type_kind_of_yojson);
+      ptype_private = Yojson.Safe.Util.(`Assoc fields |> member "ptypePrivate" |> (fun x -> Asttypes_deserializer.private_flag_of_yojson x));
+      ptype_manifest = Yojson.Safe.Util.(`Assoc fields |> member "ptypeManifest" |> (fun x -> match x with
+        | `Null -> None
+        | _ -> Some (core_type_of_yojson x)
+      ));
+      ptype_attributes = Yojson.Safe.Util.(`Assoc fields |> member "ptypeAttributes" |> attributes_of_yojson);
+      ptype_loc = Yojson.Safe.Util.(`Assoc fields |> member "ptypeLoc" |> Location_deserializer.t_of_yojson);
+    }
+  | _ -> failwith "Invalid JSON format for type_declaration"
+
+and type_kind_of_yojson (json : Yojson.Safe.t) : type_kind = 
+  match json with
+  | `Assoc [("tag", `String "Ptype_abstract")] -> Ptype_abstract
+  | `Assoc [("tag", `String "Ptype_variant"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [labels] -> Ptype_variant (constructor_declaration_of_yojson labels)
+     | _ -> failwith "Invalid JSON format for Ptype_variant")
+  | `Assoc [("tag", `String "Ptype_record"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [labels] -> Ptype_record (label_declaration_of_yojson labels)
+     | _ -> failwith "Invalid JSON format for Ptype_record")
+  | `Assoc [("tag", `String "Ptype_open")] -> Ptype_open
+  | _ -> failwith "Invalid JSON format for type_kind"
+
+and label_declaration_of_yojson (json : Yojson.Safe.t) : label_declaration =
+  match json with
+  | `Assoc fields -> 
+    {
+      pld_name = Yojson.Safe.Util.(`Assoc fields |> member "pldName" |> (fun x -> Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) x));
+      pld_mutable = Yojson.Safe.Util.(`Assoc fields |> member "pldMutable" |> (fun x -> Asttypes_deserializer.mutable_flag_of_yojson x));
+      pld_type = Yojson.Safe.Util.(`Assoc fields |> member "pldType" |> core_type_of_yojson);
+      pld_loc = Yojson.Safe.Util.(`Assoc fields |> member "pldLoc" |> Location_deserializer.t_of_yojson);
+      pld_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pldAttributes" |> attributes_of_yojson);
+    }
+  | _ -> failwith "Invalid JSON format for label_declaration"
+
+and constructor_declaration_of_yojson (json : Yojson.Safe.t) : constructor_declaration =
+  match json with
+  | `Assoc fields -> 
+    {
+      pcd_name = Yojson.Safe.Util.(`Assoc fields |> member "pcdName" |> (fun x -> Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) x));
+      pcd_args = Yojson.Safe.Util.(`Assoc fields |> member "pcdName" |> constructor_arguments_of_yojson);
+      pcd_res = Yojson.Safe.Util.(`Assoc fields |> member "pcdRes" |> (fun x -> match x with
+        | `Null -> None
+        | _ -> Some (core_type_of_yojson x)
+      ));
+      pcd_loc = Yojson.Safe.Util.(`Assoc fields |> member "pcdLoc" |> Location_deserializer.t_of_yojson);
+      pcd_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pcdAttributes" |> attributes_of_yojson);
+    }
+  | _ -> failwith "Invalid JSON format for label_declaration"
+
+
+and constructor_arguments_of_yojson (json : Yojson.Safe.t) : constructor_arguments =
+  match json with
+  | `Assoc [("tag", `String "Pcstr_tuple"); ("contents", jsons)] ->
+    (match jsons with
+     | `List core_types_json -> Pcstr_tuple (List.map core_type_of_yojson core_types_json)
+     | _ -> failwith "Invalid JSON format for Pcstr_tuple")
+  | `Assoc [("tag", `String "Pcstr_record"); ("contents", jsons)] ->
+    (match jsons with
+     | `List labels_json -> Pcstr_record (List.map label_declaration_of_yojson labels_json)
+     | _ -> failwith "Invalid JSON format for Pcstr_record")
+  | _ -> failwith "Invalid JSON format for constructor_arguments"
+
+and type_extension_of_yojson (json : Yojson.Safe.t) : type_extension =
+  match json with
+  | `Assoc fields ->
+    {
+      ptyext_path = Yojson.Safe.Util.(`Assoc fields |> member "ptyextPath" |> (fun x -> Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson x));
+      ptyext_params = Yojson.Safe.Util.(`Assoc fields |> member "ptyextParams" |> (fun x -> match x with
+        | `List x_ -> List.map (fun y ->
+          match y with
+          | `List [t; v] -> (core_type_of_yojson t, Asttypes_deserializer.variance_of_yojson v)
+          | _ -> failwith "Invalid JSON format for ptyext_params"
+          ) x_
+        | _ -> failwith "Invalid JSON format for ptyext_params"
+      ));
+      ptyext_constructors = Yojson.Safe.Util.(`Assoc fields |> member "ptyextConstructors" |> (fun x -> 
+        match x with
+        | `List cons -> List.map extension_constructor_of_yojson cons
+        | _ -> failwith "Invalid JSON format for ptyext_constructors"
+        ));
+      ptyext_private = Yojson.Safe.Util.(`Assoc fields |> member "ptyextPrivate" |> (fun x -> Asttypes_deserializer.private_flag_of_yojson x));
+      ptyext_attributes = Yojson.Safe.Util.(`Assoc fields |> member "ptyextAttributes" |> attributes_of_yojson);
+    }
+  | _ -> failwith "Invalid JSON format for type_extension"
+
+and extension_constructor_of_yojson (json : Yojson.Safe.t) : extension_constructor =
+  match json with
+  | `Assoc fields ->
+    {
+      pext_name = Yojson.Safe.Util.(`Assoc fields |> member "pextName" |> (fun x -> Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) x));
+      pext_kind = Yojson.Safe.Util.(`Assoc fields |> member "pextKind" |> extension_constructor_kind_of_yojson);
+      pext_loc = Yojson.Safe.Util.(`Assoc fields |> member "pextLoc" |> Location_deserializer.t_of_yojson);
+      pext_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pextAttributes" |> attributes_of_yojson);
+    }
+  | _ -> failwith "Invalid JSON format for extension_constructor"
+
+and extension_constructor_kind_of_yojson (json : Yojson.Safe.t) : extension_constructor_kind =
+  match json with
+  | `Assoc [("tag", `String "Pext_decl"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [ca; ct] -> Pext_decl (constructor_arguments_of_yojson ca, (match ct with
+        | `Null -> None
+        | _ -> Some (core_type_of_yojson ct)
+     ))
+     | _ -> failwith "Invalid JSON format for Pext_decl")
+  | `Assoc [("tag", `String "Pext_rebind"); ("contents", json)] -> Pext_rebind (Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson json)
+  | _ -> failwith "Invalid JSON format for extension_constructor_kind"
+
+and class_type_of_yojson (json : Yojson.Safe.t) : class_type =
+  match json with
+  | `Assoc fields ->
+    {
+      pcty_desc = Yojson.Safe.Util.(`Assoc fields |> member "pctyDesc" |> class_type_desc_of_yojson);
+      pcty_loc = Yojson.Safe.Util.(`Assoc fields |> member "pctyLoc" |> Location_deserializer.t_of_yojson);
+      pcty_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pctyAttributes" |> attributes_of_yojson);
+    }
+  | _ -> failwith "Invalid JSON format for class_type"
+
+and class_type_desc_of_yojson (json : Yojson.Safe.t) : class_type_desc =
+  match json with
+  | `Assoc [("tag", `String "Pcty_constr"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [longident_loc_json; `List core_types_json] ->
+       let longident_loc = Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson longident_loc_json in
+       let core_types = List.map core_type_of_yojson core_types_json in
+       Pcty_constr (longident_loc, core_types)
+     | _ -> failwith "Invalid JSON format for Pcty_constr")
+  | `Assoc [("tag", `String "Pcty_signature"); ("contents", json)] -> Pcty_signature (class_signature_of_yojson json)
+  | `Assoc [("tag", `String "Pcty_arrow"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [arg_label; core_type; class_type_json] ->
+       let arg_label = Asttypes_deserializer.arg_label_of_yojson arg_label in
+       let core_type = core_type_of_yojson core_type in
+       let class_type = class_type_of_yojson class_type_json in
+       Pcty_arrow (arg_label, core_type, class_type)
+     | _ -> failwith "Invalid JSON format for Pcty_arrow")
+  | `Assoc [("tag", `String "Pcty_extension"); ("contents", json)] -> Pcty_extension (extension_of_yojson json)
+  | _ -> failwith "Invalid JSON format for class_type_desc"
+
+and class_signature_of_yojson (json : Yojson.Safe.t) : class_signature =
+  match json with
+  | `Assoc fields ->
+    {
+      pcsig_self = Yojson.Safe.Util.(`Assoc fields |> member "pcsigSelf" |> core_type_of_yojson);
+      pcsig_fields = Yojson.Safe.Util.(`Assoc fields |> member "pcsigFields" |> (fun x -> match x with
+        | `List x -> List.map class_type_field_of_yojson x
+        | _ -> failwith "Invalid JSON format for pcsig_fields"
+      ));
+    }
+  | _ -> failwith "Invalid JSON format for class_signature"
+
+and class_type_field_of_yojson (json : Yojson.Safe.t) : class_type_field =
+  match json with
+  | `Assoc fields ->
+    {
+      pctf_desc = Yojson.Safe.Util.(`Assoc fields |> member "pctfDesc" |> class_type_field_desc_of_yojson);
+      pctf_loc = Yojson.Safe.Util.(`Assoc fields |> member "pctfLoc" |> Location_deserializer.t_of_yojson);
+      pctf_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pctfAttributes" |> attributes_of_yojson);
+    }
+  | _ -> failwith "Invalid JSON format for class_type_field"
+
+and class_type_field_desc_of_yojson (json : Yojson.Safe.t) : class_type_field_desc =
+  match json with
+  | `Assoc [("tag", `String "PctfInherit"); ("contents", jsons)] -> Pctf_inherit (class_type_of_yojson jsons)
+  | `Assoc [("tag", `String "PctfVal"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [loc; mutable_flag; virtual_flag; core_type] ->
+       let loc = Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) loc in
+       let mutable_flag = Asttypes_deserializer.mutable_flag_of_yojson mutable_flag in
+       let virtual_flag = Asttypes_deserializer.virtual_flag_of_yojson virtual_flag in
+       let core_type = core_type_of_yojson core_type in
+       Pctf_val (loc, mutable_flag, virtual_flag, core_type)
+     | _ -> failwith "Invalid JSON format for Pctf_val")
+  | `Assoc [("tag", `String "PctfMethod"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [loc; private_flag; virtual_flag; core_type] ->
+       let loc = Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) loc in
+       let private_flag = Asttypes_deserializer.private_flag_of_yojson private_flag in
+       let virtual_flag = Asttypes_deserializer.virtual_flag_of_yojson virtual_flag in
+       let core_type = core_type_of_yojson core_type in
+       Pctf_method (loc, private_flag, virtual_flag, core_type)
+     | _ -> failwith "Invalid JSON format for Pctf_method")
+  | `Assoc [("tag", `String "PctfConstraint"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [core_type1; core_type2] ->
+       let core_type1 = core_type_of_yojson core_type1 in
+       let core_type2 = core_type_of_yojson core_type2 in
+       Pctf_constraint (core_type1, core_type2)
+     | _ -> failwith "Invalid JSON format for Pctf_constraint")
+  | `Assoc [("tag", `String "PctfAttribute"); ("contents", json)] -> Pctf_attribute (attribute_of_yojson json)
+  | `Assoc [("tag", `String "PctfExtension"); ("contents", json)] -> Pctf_extension (extension_of_yojson json)
+  | _ -> failwith "Invalid JSON format for class_type_field_desc"
+
+and class_infos_of_yojson (json : Yojson.Safe.t) : 'a class_infos =
+  match json with
+  | `Assoc fields ->
+    {
+      pci_virt = Yojson.Safe.Util.(`Assoc fields |> member "pciVirt" |> (fun x -> Asttypes_deserializer.virtual_flag_of_yojson x));
+      pci_params = Yojson.Safe.Util.(`Assoc fields |> member "pciParams" |> (fun x -> match x with
+        | `List x_ -> List.map (fun y ->
+          match y with
+          | `List [t; v] -> (core_type_of_yojson t, Asttypes_deserializer.variance_of_yojson v)
+          | _ -> failwith "Invalid JSON format for pci_params"
+          ) x_
+        | _ -> failwith "Invalid JSON format for pci_params"
+      ));
+      pci_name = Yojson.Safe.Util.(`Assoc fields |> member "pciName" |> (fun x -> Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) x));
+      pci_expr = Yojson.Safe.Util.(`Assoc fields |> member "pciExpr" |> class_expr_of_yojson); (** TODO : Special type function **)
+      pci_loc = Yojson.Safe.Util.(`Assoc fields |> member "pciLoc" |> Location_deserializer.t_of_yojson);
+      pci_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pciAttributes" |> attributes_of_yojson);
+    }
+  | _ -> failwith "Invalid JSON format for class_infos"
+
+and class_type_declaration_of_yojson (json : Yojson.Safe.t) : class_type_declaration = class_infos_of_yojson class_type_of_yojson json
+
+and class_expr_of_yojson (json : Yojson.Safe.t) : class_expr =
+  match json with
+  | `Assoc fields ->
+    {
+      pcl_desc = Yojson.Safe.Util.(`Assoc fields |> member "pclDesc" |> class_expr_desc_of_yojson);
+      pcl_loc = Yojson.Safe.Util.(`Assoc fields |> member "pclLoc" |> Location_deserializer.t_of_yojson);
+      pcl_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pclAttributes" |> attributes_of_yojson);
+    }
+  | _ -> failwith "Invalid JSON format for class_expr"
+
+and class_expr_desc_of_yojson (json : Yojson.Safe.t) : class_expr_desc =
+  match json with
+  | `Assoc [("tag", `String "PclConstr"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [longident_loc_json; `List core_types_json] ->
+       let longident_loc = Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson longident_loc_json in
+       let core_types = List.map core_type_of_yojson core_types_json in
+       Pcl_constr (longident_loc, core_types)
+     | _ -> failwith "Invalid JSON format for Pcl_constr")
+  | `Assoc [("tag", `String "PclStructure"); ("contents", json)] -> Pcl_structure (class_structure_of_yojson json)
+  | `Assoc [("tag", `String "PclFun"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [label; expression_json; pattern_json; class_expr_json] ->
+       let label = Asttypes_deserializer.arg_label_of_yojson label in
+       let expression = match expression_json with
+        | `Null -> None
+        | _ -> Some (expression_of_yojson expression_json) in
+       let pattern = pattern_of_yojson pattern_json in
+       let class_expr = class_expr_of_yojson class_expr_json in
+       Pcl_fun (label, expression, pattern, class_expr)
+     | _ -> failwith "Invalid JSON format for Pcl_fun")
+  | `Assoc [("tag", `String "PclApply"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [class_expr1_json; `List class_expr2_json] ->
+       let class_expr1 = class_expr_of_yojson class_expr1_json in
+       let class_expr2 = List.map (fun x -> 
+        match x with
+        | `List [l; e] -> (Asttypes_deserializer.arg_label_of_yojson l, expression_of_yojson e)
+        | _ -> failwith "Invalid JSON format for Pcl_apply") class_expr2_json in
+       Pcl_apply (class_expr1, class_expr2)
+     | _ -> failwith "Invalid JSON format for Pcl_apply")
+  | `Assoc [("tag", `String "PclLet"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [rec_flag; `List value_binding_json; class_expr_json] ->
+       let rec_flag = Asttypes_deserializer.rec_flag_of_yojson rec_flag in
+       let value_binding = List.map value_binding_of_yojson value_binding_json in
+       let class_expr = class_expr_of_yojson class_expr_json in
+       Pcl_let (rec_flag, value_binding, class_expr)
+     | _ -> failwith "Invalid JSON format for Pcl_let")
+  | `Assoc [("tag", `String "PclConstraint"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [class_expr1_json; class_type_json] ->
+       let class_expr1 = class_expr_of_yojson class_expr1_json in
+       let class_type = class_type_of_yojson class_type_json in
+       Pcl_constraint (class_expr1, class_type)
+     | _ -> failwith "Invalid JSON format for Pcl_constraint")
+  | `Assoc [("tag", `String "PclExtension"); ("contents", json)] -> Pcl_extension (extension_of_yojson json)
+  | `Assoc [("tag", `String "PclOpen"); ("contents", json)] -> 
+    (match json with
+      | `List [override_flag; longident_loc; class_expr] -> 
+        let override_flag_type = Asttypes_deserializer.override_flag_of_yojson override_flag in
+        let longident_loc_type = Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson longident_loc in
+        let class_expr_type = class_expr_of_yojson class_expr in
+        Pcl_open (override_flag_type, longident_loc_type, class_expr_type)
+      | _ -> failwith "Invalid JSON format for Pcl_open")
+  | _ -> failwith "Invalid JSON format for class_expr_desc"
+
+and class_structure_of_yojson (json : Yojson.Safe.t) : class_structure =
+  match json with
+  | `Assoc fields ->
+    {
+      pcstr_self = Yojson.Safe.Util.(`Assoc fields |> member "pcstrSelf" |> pattern_of_yojson);
+      pcstr_fields = Yojson.Safe.Util.(`Assoc fields |> member "pcstrFields" |> (fun x -> match x with
+        | `List x -> List.map class_field_of_yojson x
+        | _ -> failwith "Invalid JSON format for pcstr_fields"
+      ));
+    }
+  | _ -> failwith "Invalid JSON format for class_structure"
+
+and class_field_of_yojson (json : Yojson.Safe.t) : class_field =
+  match json with
+  | `Assoc fields ->
+    {
+      pcf_desc = Yojson.Safe.Util.(`Assoc fields |> member "pcfDesc" |> class_field_desc_of_yojson);
+      pcf_loc = Yojson.Safe.Util.(`Assoc fields |> member "pcfLoc" |> Location_deserializer.t_of_yojson);
+      pcf_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pcfAttributes" |> attributes_of_yojson);
+    }
+  | _ -> failwith "Invalid JSON format for class_field"
+
+and class_field_desc_of_yojson (json : Yojson.Safe.t) : class_field_desc =
+  match json with
+  | `Assoc [("tag", `String "PcfInherit"); ("contents", jsons)] -> Pcf_inherit ()
+  | `Assoc [("tag", `String "PcfVal"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [loc; mutable_flag; cf] ->
+       let loc = Asttypes_deserializer.loc_of_yojson Asttypes_deserializer.label_of_yojson loc in
+       let mutable_flag = Asttypes_deserializer.mutable_flag_of_yojson mutable_flag in
+       Pcf_val (loc, mutable_flag, class_field_kind_of_yojson cf)
+     | _ -> failwith "Invalid JSON format for Pcf_val")
+  | `Assoc [("tag", `String "PcfMethod"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [loc; private_flag; cf] ->
+       let loc = Asttypes_deserializer.loc_of_yojson Asttypes_deserializer.label_of_yojson loc in
+       let private_flag = Asttypes_deserializer.private_flag_of_yojson private_flag in
+       Pcf_method (loc, private_flag, class_field_kind_of_yojson cf)
+     | _ -> failwith "Invalid JSON format for Pcf_method")
+  | `Assoc [("tag", `String "PcfConstraint"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [ct1; ct2] ->
+       let ct1 = core_type_of_yojson ct1 in
+       let ct2 = core_type_of_yojson ct2 in
+       Pcf_constraint (ct1, ct2)
+     | _ -> failwith "Invalid JSON format for Pcf_constraint")
+  | `Assoc [("tag", `String "PcfInitializer"); ("contents", json)] -> Pcf_initializer (expression_of_yojson json)
+  | `Assoc [("tag", `String "PcfAttribute"); ("contents", json)] -> Pcf_attribute (attribute_of_yojson json)
+  | `Assoc [("tag", `String "PcfExtension"); ("contents", json)] -> Pcf_extension (extension_of_yojson json)
+  | _ -> failwith "Invalid JSON format for class_field_desc"
+
+and class_field_kind_of_yojson (jsons : Yojson.Safe.t) : class_field_kind = 
+  match jsons with
+  | `Assoc [("tag", `String "CfkVirtual"); ("contents", json)] -> Cfk_virtual (core_type_of_yojson json)
+  | `Assoc [("tag", `String "CfkConcrete"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [ovf; e] ->
+       let ct1 = Asttypes_deserializer.override_flag_of_yojson ovf in
+       let ct2 = expression_of_yojson e in
+       Cfk_concrete (ct1, ct2)
+     | _ -> failwith "Invalid JSON format for Pcf_constraint")
+  | _ -> failwith "Invalid JSON format for class_field_kind"
+
+and module_type_of_yojson (jsons : Yojson.Safe.t) : module_type = 
+  match jsons with
+  | `Assoc fields -> 
+    {
+      pmty_desc = Yojson.Safe.Util.(`Assoc fields |> member "pmtyDesc" |> module_type_desc_of_yojson);
+      pmty_loc = Yojson.Safe.Util.(`Assoc fields |> member "pmtyLoc" |> Location_deserializer.t_of_yojson);
+      pmty_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pmtyLoc" |> attributes_of_yojson);
+    }
+  | _ -> failwith "Invalid JSON format for module_type"
+
+and module_type_desc_of_yojson (jsons : Yojson.Safe.t) : module_type_desc = 
+  match jsons with
+  | `Assoc [("tag", `String "PmtyIdent"); ("contents", loc)] -> Pmty_ident ( Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson loc)
+  | `Assoc [("tag", `String "PmtySignature"); ("contents", s)] -> Pmty_signature (signature_of_yojson s)
+  | `Assoc [("tag", `String "PmtyFunctor"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [loc; mt1; mt2] ->
+       let loc_ = Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) loc in
+       let mt1_ = match mt1 with
+       | `Null -> None
+       | _ -> Some (module_type_of_yojson mt1) in
+       let mt2_ = module_type_of_yojson mt2 in
+       Pmty_functor (loc_, mt1_, mt2_)
+     | _ -> failwith "Invalid JSON format for PmtyFunctor")
+  | `Assoc [("tag", `String "PmtyWith"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [mt; `List l_list] ->
+       let mt_ = module_type_of_yojson mt in
+       let l_ = List.map with_constraint_of_yojson l_list in
+       Pmty_with (mt_, l_)
+     | _ -> failwith "Invalid JSON format for PmtyWith")
+  | `Assoc [("tag", `String "PmtyTypeOf"); ("contents", jsons)] -> Pmty_typeof (module_expr_of_yojson jsons)
+  | `Assoc [("tag", `String "PmtyExtension"); ("contents", jsons)] -> Pmty_extension (extension_of_yojson jsons)
+  | `Assoc [("tag", `String "PmtyAlias"); ("contents", jsons)] -> Pmty_alias (Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson jsons)
+  | _ -> failwith "Invalid JSON format for module_type_desc"
+
+and signature_of_yojson (jsons : Yojson.Safe.t) : signature = 
+  match jsons with
+  | `List x -> List.map signature_item_of_yojson x
+  | _ -> failwith "Invalid JSON for structure"
+
+and signature_item_of_yojson (jsons : Yojson.Safe.t) : signature_item = 
+  match jsons with
+  | `Assoc fields -> 
+    {
+      psig_desc = Yojson.Safe.Util.(`Assoc fields |> member "psigDesc" |> signature_item_desc_of_yojson);
+      psig_loc = Yojson.Safe.Util.(`Assoc fields |> member "psigLoc" |> Location_deserializer.t_of_yojson);
+    } 
+  | _ -> failwith "Invalid JSON for structure_item"
+
+and signature_item_desc_of_yojson (jsons : Yojson.Safe.t) : signature_item_desc =
+  match jsons with
+  | `Assoc [("tag", `String "PsigValue"); ("contents", jsons)] -> Psig_value (value_description_of_yojson jsons)
+  | `Assoc [("tag", `String "PsigType"); ("contents", jsons)] ->
+      (match jsons with
+       | `List [mt; `List l_list] ->
+          let mt_ = Asttypes_deserializer.rec_flag_of_yojson mt in
+          let l_ = List.map type_declaration_of_yojson l_list in
+          Psig_type (mt_, l_)
+       | _ -> failwith "Invalid JSON format for PsigType")
+  | `Assoc [("tag", `String "PsigTypExt"); ("contents", jsons)] -> Psig_typext (type_extension_of_yojson jsons)
+  | `Assoc [("tag", `String "PsigException"); ("contents", jsons)] -> Psig_exception (extension_constructor_of_yojson jsons)
+  | `Assoc [("tag", `String "PsigModule"); ("contents", jsons)] -> Psig_module (module_declaration_of_yojson jsons)
+  | `Assoc [("tag", `String "PsigRecModule"); ("contents", `List jsons)] -> Psig_recmodule (List.map module_declaration_of_yojson jsons)
+  | `Assoc [("tag", `String "PsigModType"); ("contents", jsons)] -> Psig_modtype (module_type_declaration_of_yojson jsons)
+  | `Assoc [("tag", `String "PsigOpen"); ("contents", jsons)] -> Psig_open (open_description_of_yojson jsons)
+  | `Assoc [("tag", `String "PsigInclude"); ("contents", jsons)] -> Psig_include (include_description_of_yojson jsons)
+  | `Assoc [("tag", `String "PsigClass"); ("contents", _jsons)] -> Psig_class ()
+  | `Assoc [("tag", `String "PsigClassType"); ("contents", `List jsons)] -> Psig_class_type (List.map class_type_declaration_of_yojson jsons)
+  | `Assoc [("tag", `String "PsigAttribute"); ("contents", jsons)] -> Psig_attribute (attribute_of_yojson jsons)
+  | `Assoc [("tag", `String "PsigExtension"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [e; a] -> Psig_extension (extension_of_yojson e, attributes_of_yojson a)
+     | _ -> failwith "Invalid JSON format for PsigExtension")
+  | _ -> failwith "Invalid JSON for signature_item"
+
+
+and module_declaration_of_yojson (jsons : Yojson.Safe.t) : module_declaration = 
+  match jsons with
+  | `Assoc fields -> 
+    {
+      pmd_name = Yojson.Safe.Util.(`Assoc fields |> member "pmdName" |> (fun x -> Asttypes_deserializer.loc_of_yojson Yojson.Safe.Util.to_string x));
+      pmd_type = Yojson.Safe.Util.(`Assoc fields |> member "pmdType" |> module_type_of_yojson);
+      pmd_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pmdAttributes" |> attributes_of_yojson);
+      pmd_loc = Yojson.Safe.Util.(`Assoc fields |> member "pmdLoc" |> Location_deserializer.t_of_yojson);
+    } 
+  | _ -> failwith "Invalid JSON for structure_item"
+
+and open_description_of_yojson (jsons : Yojson.Safe.t) : open_description = 
+  match jsons with
+  | `Assoc fields -> 
+    {
+      popen_lid = Yojson.Safe.Util.(`Assoc fields |> member "popenLid" |> (fun x -> Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson x));
+      popen_override = Yojson.Safe.Util.(`Assoc fields |> member "popenOverride" |> Asttypes_deserializer.override_flag_of_yojson);
+      popen_loc = Yojson.Safe.Util.(`Assoc fields |> member "popenLoc" |> Location_deserializer.t_of_yojson);
+      popen_attributes = Yojson.Safe.Util.(`Assoc fields |> member "popenAttributes" |> attributes_of_yojson);
+    } 
+  | _ -> failwith "Invalid JSON for open_description"
+
+
+(* TODO SPECIAL TYPE FUNCTION *)
+and include_infos_of_yojson_module_type (f : Yojson.Safe.t -> 'a) (jsons : Yojson.Safe.t) : 'a include_infos =
+  match jsons with
+  | `Assoc fields -> 
+    {
+      pincl_mod = f (Yojson.Safe.Util.(`Assoc fields |> member "pinclMod"));
+      pincl_loc = Yojson.Safe.Util.(`Assoc fields |> member "pinclLoc" |> Location_deserializer.t_of_yojson);
+      pincl_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pinclAttributes" |> attributes_of_yojson);
+    } 
+  | _ -> failwith "Invalid JSON for include_infos"
+
+(* TODO SPCIAL TYPE FUNCTION *)
+
+
+
+and include_description_of_yojson (jsons : Yojson.Safe.t) : include_description = 
+  include_infos_of_yojson_module_type module_type_of_yojson jsons
+
+and include_declaration_of_yojson (jsons :  Yojson.Safe.t) :include_declaration =
+  include_infos_of_yojson_module_expr module_expr_of_yojson jsons
+  
+and with_constraint_of_yojson (jsons : Yojson.Safe.t) : with_constraint = 
+  match jsons with
+  | `Assoc [("tag", `String "PwithType"); ("contents", jsons)] -> 
+    (match jsons with
+    | `List [longident_loc; typ] -> 
+      let longident_loc = Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson longident_loc in
+      let typ = type_declaration_of_yojson typ in
+      Pwith_type (longident_loc, typ)
+    | _ -> failwith "Invalid JSON for with_constraint")
+  | `Assoc [("tag", `String "PwithModule"); ("contents", jsons)] ->
+    (match jsons with
+    | `List [longident_loc; longident_loc2] -> 
+      let longident_loc = Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson longident_loc in
+      let longident_loc2 = Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson longident_loc2 in
+      Pwith_module (longident_loc, longident_loc2)
+    | _ -> failwith "Invalid JSON for with_constraint")
+  | `Assoc [("tag", `String "PwithTypeSubst"); ("contents", jsons)] ->
+    (match jsons with
+    | `List [longident_loc; typ] -> 
+      let longident_loc = Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson longident_loc in
+      let typ = type_declaration_of_yojson typ in
+      Pwith_typesubst (longident_loc, typ)
+    | _ -> failwith "Invalid JSON for with_constraint")
+  | `Assoc [("tag", `String "PwithModSubst"); ("contents", jsons)] ->
+    (match jsons with
+    | `List [loc1; loc2] -> 
+      let loc1_ = Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson loc1 in
+      let loc2_ = Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson loc2 in
+      Pwith_modsubst (loc1_, loc2_)
+    | _ -> failwith "Invalid JSON for with_constraint")
+  | _ -> failwith "Invalid JSON for with_constraint"
+
+
+and module_expr_of_yojson (jsons : Yojson.Safe.t) : module_expr = 
+  match jsons with
+  | `Assoc fields -> 
+    {
+      pmod_desc = Yojson.Safe.Util.(`Assoc fields |> member "pmodDesc" |> module_expr_desc_of_yojson);
+      pmod_loc = Yojson.Safe.Util.(`Assoc fields |> member "pmodLoc" |> Location_deserializer.t_of_yojson);
+      pmod_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pmodAttributes" |> attributes_of_yojson);
+    }
+  | _ -> failwith "Invalid JSON for module_expr"
+
+and module_expr_desc_of_yojson (jsons : Yojson.Safe.t) : module_expr_desc =
+  match jsons with
+  | `Assoc [("tag", `String "PmodIdent"); ("contents", jsons)] -> Pmod_ident (Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson jsons)
+  | `Assoc [("tag", `String "PmodStructure"); ("contents", jsons)] -> Pmod_structure (structure_of_yojson jsons)
+  | `Assoc [("tag", `String "PmodFunctor"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [loc; mt; me] ->
+       let loc_ = Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) loc in
+       let mt_ = match mt with
+        | `Null -> None
+        | _ -> Some (module_type_of_yojson mt) in
+       let me_ = module_expr_of_yojson me in
+       Pmod_functor (loc_, mt_, me_)
+     | _ -> failwith "Invalid JSON for module_expr_desc")
+  | `Assoc [("tag", `String "PmodApply"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [me1; me2] ->
+       let me1_ = module_expr_of_yojson me1 in
+       let me2_ = module_expr_of_yojson me2 in
+       Pmod_apply (me1_, me2_)
+     | _ -> failwith "Invalid JSON for module_expr_desc")
+  | `Assoc [("tag", `String "PmodConstraint"); ("contents", jsons)] ->
+    (match jsons with
+     | `List [me; mt] ->
+       let me_ = module_expr_of_yojson me in
+       let mt_ = module_type_of_yojson mt in
+       Pmod_constraint (me_, mt_)
+     | _ -> failwith "Invalid JSON for module_expr_desc")
+  | `Assoc [("tag", `String "PmodUnpack"); ("contents", jsons)] -> Pmod_unpack (expression_of_yojson jsons)
+  | `Assoc [("tag", `String "PmodExtension"); ("contents", jsons)] -> Pmod_extension (extension_of_yojson jsons)
+  | _ -> failwith "Invalid JSON for module_expr_desc"
+
+
+and structure_of_yojson (jsons : Yojson.Safe.t) : structure = 
+  match jsons with
+  | `List x -> List.map structure_item_of_yojson x
+  | _ -> failwith "Invalid JSON for structure"
+
+and structure_item_of_yojson (jsons : Yojson.Safe.t) : structure_item =
+  match jsons with
+  | `Assoc fields -> 
+    {
+      pstr_desc = Yojson.Safe.Util.(`Assoc fields |> member "pstrDesc" |> structure_item_desc_of_yojson);
+      pstr_loc = Yojson.Safe.Util.(`Assoc fields |> member "pstrLoc" |> Location_deserializer.t_of_yojson);
+    } 
+  | _ -> failwith "Invalid JSON for structure_item"
+
+and structure_item_desc_of_yojson (jsons : Yojson.Safe.t) : structure_item_desc =
+  match jsons with
+  | `Assoc [("tag", `String "PstrEval"); ("contents", jsons)] -> 
+    (match jsons with
+    | `List [e ; a] -> Pstr_eval (expression_of_yojson e, attributes_of_yojson a)
+    | _ -> failwith "Invalid JSON for structure_item_desc")
+  | `Assoc [("tag", `String "PstrValue"); ("contents", jsons)] -> 
+    (match jsons with
+    | `List [rf; vbs] -> Pstr_value (Asttypes_deserializer.rec_flag_of_yojson rf, List.map value_binding_of_yojson vbs)
+    | _ -> failwith "Invalid JSON for structure_item_desc")
+  | `Assoc [("tag", `String "PstrPrimitive"); ("contents", jsons)] -> Pstr_primitive (value_description_of_yojson jsons)
+  | `Assoc [("tag", `String "PstrType"); ("contents", jsons)] -> 
+    (match jsons with
+    | `List [rf; `List l] -> 
+      let rf_ =  Asttypes_deserializer.rec_flag_of_yojson rf in
+      let l_ = List.map type_declaration_of_yojson l in
+      Pstr_type (rf_, l_)
+    | _ -> failwith "Invalid JSON for structure_item_desc")
+  | `Assoc [("tag", `String "PstrTypExt"); ("contents", jsons)] -> Pstr_typext (type_extension_of_yojson jsons)
+  | `Assoc [("tag", `String "PstrException"); ("contents", jsons)] -> Pstr_exception (extension_constructor_of_yojson jsons)
+  | `Assoc [("tag", `String "PstrModule"); ("contents", jsons)] -> Pstr_module (module_binding_of_yojson jsons)
+  | `Assoc [("tag", `String "PstrRecModule"); ("contents", `List jsons)] -> Pstr_recmodule (List.map module_binding_of_yojson jsons)
+  | `Assoc [("tag", `String "PstrModType"); ("contents", jsons)] -> Pstr_modtype (module_type_declaration_of_yojson jsons)
+  | `Assoc [("tag", `String "PstrOpen"); ("contents", jsons)] -> Pstr_open (open_description_of_yojson jsons)
+  | `Assoc [("tag", `String "PstrClass"); ("contents", jsons)] -> Pstr_class ()
+  | `Assoc [("tag", `String "PstrClassType"); ("contents", `List jsons)] -> Pstr_class_type (List.map class_type_declaration_of_yojson jsons)
+  | `Assoc [("tag", `String "PstrAttribute"); ("contents", jsons)] -> Pstr_attribute (attribute_of_yojson jsons)
+  | `Assoc [("tag", `String "PstrExtension"); ("contents", jsons)] -> 
+    (match jsons with
+    | `List [rf; l] -> 
+      let rf_ =  extension_of_yojson rf in
+      let l_ = attributes_of_yojson l in
+      Pstr_extension (rf_, l_)
+    | _ -> failwith "Invalid JSON for structure_item_desc")
+  | _ -> failwith "Invalid JSON for structure_item_desc"
+
+and value_binding_of_yojson (json : Yojson.Safe.t) : value_binding = 
+  match json with
+  | `Assoc fields -> 
+    {
+      pvb_pat = Yojson.Safe.Util.(`Assoc fields |> member "pvbPat" |> pattern_of_yojson);
+      pvb_expr = Yojson.Safe.Util.(`Assoc fields |> member "pvbExpr" |> expression_of_yojson);
+      pvb_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pvbAttributes" |> attributes_of_yojson);
+      pvb_loc = Yojson.Safe.Util.(`Assoc fields |> member "pvbLoc" |> Location_deserializer.t_of_yojson);
+    }
+  | _ -> failwith "Invalid JSON for value_binding"
+
+and module_binding_of_yojson (json : Yojson.Safe.t) : module_binding = 
+  match json with
+  | `Assoc fields -> 
+    {
+      pmb_name = Yojson.Safe.Util.(`Assoc fields |> member "pmbName" |> (fun x -> Asttypes_deserializer.loc_of_yojson Yojson.Safe.Util.to_string x));
+      pmb_expr = Yojson.Safe.Util.(`Assoc fields |> member "pmbExpr" |> module_expr_of_yojson);
+      pmb_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pmbAttributes" |> attributes_of_yojson);
+      pmb_loc = Yojson.Safe.Util.(`Assoc fields |> member "pmbLoc" |> Location_deserializer.t_of_yojson);
+    }
+  | _ -> failwith "Invalid JSON for module_binding"
 

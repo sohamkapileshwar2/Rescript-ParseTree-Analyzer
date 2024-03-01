@@ -866,8 +866,7 @@ and class_infos_to_yojson (f : 'a -> Yojson.Safe.t) (c : 'a class_infos) : Yojso
 
 (* Type ClassTypeDeclaration *)
 
-and class_type_declaration_to_yojson (c : class_type_declaration) : Yojson.Safe.t =
-    class_infos_to_yojson class_type_to_yojson c
+and class_type_declaration_to_yojson (c : class_type_declaration) : Yojson.Safe.t = class_infos_to_yojson class_type_to_yojson c
 
 (* Type ClassExpression *)
 
