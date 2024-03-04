@@ -97,13 +97,13 @@ let _store_string_as_file filename str _constant =
   close_out oc
 
 
-let parse_file file_name =
+(* let parse_file file_name =
   let ic = open_in file_name in
   let _lexbuf = Lexing.from_channel ic in
   let parseResult = Res_driver.parsingEngine.parseImplementation ~forPrinter:false ~filename:file_name in
-  parseResult
+  parseResult *)
 
-let () =
+(* let () =
   let parsetree = parse_file "sample_rescript.res" in
   Res_driver.printEngine.printImplementation
     ~width:4
@@ -180,4 +180,33 @@ name : string;
 let () = 
   let json = Yojson.Safe.from_file "constant.json" in
   let my_books = Parsetree_deserializer2.constant_of_yojson json in
-  print_endline (Yojson.Safe.to_string (Parsetree_serializer.constant_to_yojson my_books))
+  print_endline (Yojson.Safe.to_string (Parsetree_serializer.constant_to_yojson my_books)) *)
+
+
+type test_type = {
+  ptyp_desc: string;
+  ptyp_loc: string;
+  ptyp_attributes: string;
+}
+
+let test_type_of_yojson (json: Yojson.Safe.t) : test_type =
+  match json with
+  | `Assoc fields ->
+    {
+      ptyp_desc = Yojson.Safe.Util.(`Assoc fields |> member "ptypDesc" |> to_string);
+      ptyp_loc = Yojson.Safe.Util.(`Assoc fields |> member "ptypLoc" |> to_string);
+      ptyp_attributes = Yojson.Safe.Util.(`Assoc fields |> member "ptypAttributes" |> to_string);
+    }
+  | _ -> failwith "Invalid JSON"
+
+let test_type_to_yojson (t: test_type) : Yojson.Safe.t =
+  `Assoc [
+    ("ptypDesc", `String t.ptyp_desc);
+    ("ptypLoc", `String t.ptyp_loc);
+    ("ptypAttributes", `String t.ptyp_attributes);
+  ]
+
+let () =
+  let json = Yojson.Safe.from_file "test_type.json" in
+  let my_test_type = test_type_of_yojson json in
+  print_endline (Yojson.Safe.to_string (test_type_to_yojson my_test_type))
