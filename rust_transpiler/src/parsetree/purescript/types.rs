@@ -471,3 +471,20 @@ struct AdoBlock<T> {
     adoIn: SourceToken,
     adoResult: Expr<T>, 
 }
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum Binder<T> {
+    BinderWildcard(T, SourceToken),
+    BinderVar(T, Name<Ident>),
+    BinderNamed(T, Name<Ident>, SourceToken, Binder<T>),
+    BinderConstructor(T, QualifiedName<N.ProperName<'static, N.ConstructorName>>, Vec<Binder<T>>),
+    BinderBoolean(T, SourceToken, Bool), 
+    BinderChar(T, SourceToken, Char),
+    BinderString(T, SourceToken, PSString),
+    BinderNumber(T, Option<SourceToken>, SourceToken, Either<Integer, Double>), 
+    BinderArray(T, Delimited<Binder<T>>),
+    BinderRecord(T, Delimited<RecordLabeled<Binder<T>>>),
+    BinderParens(T, Wrapped<Binder<T>>),
+    BinderTyped(T, Binder<T>, SourceToken, Type<T>),
+    BinderOp(T, Binder<T>, QualifiedName<N.OpName<'static, N.ValueOpName>>, Binder<T>), 
+}
