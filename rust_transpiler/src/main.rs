@@ -1,6 +1,6 @@
-mod purescript_types;
+mod parsetree;
+use parsetree::purescript::purescript_function;
 
-use purescript_types::purescript;
 
 fn main() {
     println!("Hello, world!");
@@ -10,8 +10,8 @@ fn main() {
     test(&mut s);
     println!("{s}");
 
-    println!("Testing Purescript Types module");
-    purescript();
+    println!("Testing Purescript Module");
+    purescript_function();
 }
 
 fn test(some_string: &mut String) {

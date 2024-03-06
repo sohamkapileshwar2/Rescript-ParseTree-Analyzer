@@ -16,6 +16,11 @@ cargo install
 ```sh
 cargo install cargo-watch
 ```
+
+```sh
+cargo watch -x check
+```
+
 ```sh
 cargo watch -x run
 ```
