@@ -3,14 +3,14 @@ use std::fmt::Debug;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SourcePos {
-    pub src_line: i32,
-    pub src_column: i32,
+    pub srcLine: i32,
+    pub srcColumn: i32,
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SourceRange {
-    pub src_start: SourcePos,
-    pub src_end: SourcePos,
+    pub srcStart: SourcePos,
+    pub srcEnd: SourcePos,
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -28,9 +28,9 @@ pub enum LineFeed {
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TokenAnn {
-    pub tok_range: SourceRange,
-    pub tok_leading_comments: Vec<Comment<LineFeed>>,
-    pub tok_trailing_comments: Vec<Comment<()>>,
+    pub tokRange: SourceRange,
+    pub tokLeadingComments: Vec<Comment<LineFeed>>,
+    pub tokTrailingComments: Vec<Comment<()>>,
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -78,52 +78,52 @@ pub enum Token {
 
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct SourceToken {
-    pub tok_ann: TokenAnn,
-    pub tok_value: Token,
+    pub tokAnn: TokenAnn,
+    pub tokValue: Token,
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Ident {
-    pub get_ident: String,
+    pub getIdent: String,
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct Name<A> {
-    pub name_tok: SourceToken,
-    pub name_value: A,
+    pub nameTok: SourceToken,
+    pub nameValue: A,
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct QualifiedName<A> {
-    pub qual_tok: SourceToken,
-    pub qual_module: Option<ModuleName>,
-    pub qual_name: A,
+    pub qualTok: SourceToken,
+    pub qualModule: Option<ModuleName>,
+    pub qualName: A,
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct Label {
-    pub lbl_tok: SourceToken,
-    pub lbl_name: String,
+    pub lblTok: SourceToken,
+    pub lblName: String,
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct Wrapped<A> {
-    pub wrp_open: SourceToken,
-    pub wrp_value: A,
-    pub wrp_close: SourceToken,
+    pub wrpOpen: SourceToken,
+    pub wrpValue: A,
+    pub wrpClose: SourceToken,
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct Separated<A> {
-    pub sep_head: A,
-    pub sep_tail: Vec<(SourceToken, A)>,
+    pub sepHead: A,
+    pub sepTail: Vec<(SourceToken, A)>,
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct Labeled<A, B> {
-    pub lbl_label: A,
-    pub lbl_sep: SourceToken,
-    pub lbl_value: B,
+    pub lblLabel: A,
+    pub lblSep: SourceToken,
+    pub lblValue: B,
 }
 
 pub type Delimited<A> = Wrapped<Option<Separated<A>>>;
@@ -171,8 +171,8 @@ pub enum Constraint<A> {
 
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct Row<A> {
-    pub row_labels: Option<Separated<Labeled<Label, Box<Type<A>>>>>,
-    pub row_tail: Option<(SourceToken, Box<Type<A>>)>,
+    pub rowLabels: Option<Separated<Labeled<Label, Box<Type<A>>>>>,
+    pub rowTail: Option<(SourceToken, Box<Type<A>>)>,
 }
 
 
@@ -183,14 +183,14 @@ pub struct ModuleName(pub String);
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Module<A> {
-    pub mod_ann: A,
-    pub mod_keyword: SourceToken,
-    pub mod_namespace: Name<ModuleName>,
-    pub mod_exports: Option<DelimitedNonEmpty<Export<A>>>,
-    pub mod_where: SourceToken,
-    pub mod_imports: Vec<ImportDecl<A>>,
-    pub mod_decls: Vec<Declaration<A>>,
-    pub mod_trailing_comments: Vec<Comment<LineFeed>>,
+    pub modAnn: A,
+    pub modKeyword: SourceToken,
+    pub modNamespace: Name<ModuleName>,
+    pub modExports: Option<DelimitedNonEmpty<Export<A>>>,
+    pub modWhere: SourceToken,
+    pub modImports: Vec<ImportDecl<A>>,
+    pub modDecls: Vec<Declaration<A>>,
+    pub modTrailingComments: Vec<Comment<LineFeed>>,
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
