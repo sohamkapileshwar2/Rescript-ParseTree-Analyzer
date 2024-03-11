@@ -1,39 +1,42 @@
 #![allow(dead_code)]
+#![allow(non_snake_case)]
 use std::fmt::Debug;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+use super::names as N;
+
+#[derive(Debug, PartialEq,  PartialOrd)]
 pub struct SourcePos {
     pub srcLine: i32,
     pub srcColumn: i32,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 pub struct SourceRange {
     pub srcStart: SourcePos,
     pub srcEnd: SourcePos,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 pub enum Comment<L: Debug + PartialEq> {
     Comment(String),
     Space(i32),
     Line(L),
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 pub enum LineFeed {
     LF,
     CRLF,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 pub struct TokenAnn {
     pub tokRange: SourceRange,
     pub tokLeadingComments: Vec<Comment<LineFeed>>,
     pub tokTrailingComments: Vec<Comment<()>>,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 pub enum SourceStyle {
     ASCII,
     Unicode,
@@ -82,7 +85,7 @@ pub struct SourceToken {
     pub tokValue: Token,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 pub struct Ident {
     pub getIdent: String,
 }
@@ -96,7 +99,7 @@ pub struct Name<A> {
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct QualifiedName<A> {
     pub qualTok: SourceToken,
-    pub qualModule: Option<ModuleName>,
+    pub qualModule: Option<N::ModuleName>,
     pub qualName: A,
 }
 
@@ -138,7 +141,7 @@ pub enum OneOrDelimited<A> {
 #[derive(Debug, PartialEq, PartialOrd)]
 pub enum Type<A> {
     TypeVar(A, Name<Ident>),
-    TypeConstructor(A, QualifiedName<String>), // String works ???
+    TypeConstructor(A, QualifiedName<N::ProperName<N::ProperNameType>>),
     TypeWildcard(A, SourceToken),
     TypeHole(A, Name<Ident>),
     TypeString(A, SourceToken, String),
@@ -148,8 +151,8 @@ pub enum Type<A> {
     TypeForall(A, SourceToken, Vec<TypeVarBinding<A>>, SourceToken, Box<Type<A>>), // Box ???
     TypeKinded(A, Box<Type<A>>, SourceToken, Box<Type<A>>), // Box ???
     TypeApp(A, Box<Type<A>>, Box<Type<A>>), // Box ???
-    TypeOp(A, Box<Type<A>>, QualifiedName<String>, Box<Type<A>>), // String works ???
-    TypeOpName(A, QualifiedName<String>), // String works ???
+    TypeOp(A, Box<Type<A>>, QualifiedName<N::OpName<N::OpNameType>>, Box<Type<A>>),
+    TypeOpName(A, QualifiedName<N::OpName<N::OpNameType>>),
     TypeArr(A, Box<Type<A>>, SourceToken, Box<Type<A>>), // Box ???
     TypeArrName(A, SourceToken),
     TypeConstrained(A, Constraint<A>, SourceToken, Box<Type<A>>),
@@ -165,7 +168,7 @@ pub enum TypeVarBinding<A> {
 
 #[derive(Debug, PartialEq, PartialOrd)]
 pub enum Constraint<A> {
-    Constraint(A, QualifiedName<String>, Vec<Type<A>>), // String works ???
+    Constraint(A, QualifiedName<N::ProperName<N::ProperNameType>>, Vec<Type<A>>),
     ConstraintParens(A, Wrapped<Box<Constraint<A>>>), // Box ???
 }
 
@@ -176,16 +179,11 @@ pub struct Row<A> {
 }
 
 
-// Module Name to be done ???
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ModuleName(pub String);
-
-
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 pub struct Module<A> {
     pub modAnn: A,
     pub modKeyword: SourceToken,
-    pub modNamespace: Name<ModuleName>,
+    pub modNamespace: Name<N::ModuleName>,
     pub modExports: Option<DelimitedNonEmpty<Export<A>>>,
     pub modWhere: SourceToken,
     pub modImports: Vec<ImportDecl<A>>,
@@ -193,127 +191,126 @@ pub struct Module<A> {
     pub modTrailingComments: Vec<Comment<LineFeed>>,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 pub enum Export<A> {
     ExportValue(A, Name<Ident>),
-    ExportOp(A, Name<String>), // String Works ???
-    ExportType(A, Name<String>, Option<DataMembers<A>>), // String Works ???
-    ExportTypeOp(A, SourceToken, Name<String>), // String Works ???
-    ExportClass(A, SourceToken, Name<String>), // String Works ???
-    ExportModule(A, SourceToken, Name<ModuleName>),
+    ExportOp(A, Name<N::OpName<N::OpNameType>>),
+    ExportType(A, Name<N::ProperName<N::ProperNameType>>, Option<DataMembers<A>>),
+    ExportTypeOp(A, SourceToken, Name<N::OpName<N::OpNameType>>),
+    ExportClass(A, SourceToken, Name<N::ProperName<N::ProperNameType>>),
+    ExportModule(A, SourceToken, Name<N::ModuleName>),
 }
 // Making New Types
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 pub enum DataMembers<T> {
     DataAll(T, SourceToken),
-    DataEnumerated(T, Delimited<Name<N.ProperName<'static, N.ConstructorName>>>), 
-} 
+    DataEnumerated(T, Delimited<Name<N::ProperName<N::ProperNameType>>>),
+}
 
 // Assuming types like DataHead, SourceToken, Separated, DataCtor, Type, Name, N.ProperName, ClassHead, NonEmpty, Labeled, Instance, InstanceHead, ValueBindingFields, FixityFields, Foreign, and Role are defined
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 enum Declaration<T> {
     DeclData(T, DataHead<T>, Option<(SourceToken, Separated<DataCtor<T>>)>),
     DeclType(T, DataHead<T>, SourceToken, Type<T>),
-    DeclNewtype(T, DataHead<T>, SourceToken, Name<N.ProperName<'static, N.ConstructorName>>, Type<T>), 
-    DeclClass(T, ClassHead<T>, Option<(SourceToken, NonEmpty<Labeled<Name<Ident>, Type<T>>>)>),
+    DeclNewtype(T, DataHead<T>, SourceToken, Name<N::ProperName<N::ProperNameType>>, Type<T>),
+    DeclClass(T, ClassHead<T>, Option<(SourceToken, Vec<Labeled<Name<Ident>, Type<T>>>)>),
     DeclInstanceChain(T, Separated<Instance<T>>),
     DeclDerive(T, SourceToken, Option<SourceToken>, InstanceHead<T>),
-    DeclKindSignature(T, SourceToken, Labeled<Name<N.ProperName<'static, N.TypeName>>, Type<T>>),
+    DeclKindSignature(T, SourceToken, Labeled<Name<N::ProperName<N::ProperNameType>>, Type<T>>),
     DeclSignature(T, Labeled<Name<Ident>, Type<T>>),
     DeclValue(T, ValueBindingFields<T>),
     DeclFixity(T, FixityFields),
     DeclForeign(T, SourceToken, SourceToken, Foreign<T>),
-    DeclRole(T, SourceToken, SourceToken, Name<N.ProperName<'static, N.TypeName>>, NonEmpty<Role>) 
+    DeclRole(T, SourceToken, SourceToken, Name<N::ProperName<N::ProperNameType>>, Vec<Role>)
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 struct Instance<T> {
     instHead: InstanceHead<T>,
-    instBody: Option<(SourceToken, NonEmpty<InstanceBinding<T>>)>, 
+    instBody: Option<(SourceToken, Vec<InstanceBinding<T>>)>,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 enum InstanceBinding<T> {
     InstanceBindingSignature(T, Labeled<Name<Ident>, Type<T>>),
     InstanceBindingName(T, ValueBindingFields<T>),
 }
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 struct ImportDecl<T> {
     impAnn: T,
     impKeyword: SourceToken,
-    impModule: Name<N.ModuleName>,
-    impNames: Option<(Maybe<SourceToken>, DelimitedNonEmpty<Import<T>>)>,
-    impQual: Option<(SourceToken, Name<N.ModuleName>)>, 
+    impModule: Name<N::ModuleName>,
+    impNames: Option<(Option<SourceToken>, DelimitedNonEmpty<Import<T>>)>,
+    impQual: Option<(SourceToken, Name<N::ModuleName>)>,
 }
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 enum Import<T> {
     ImportValue(T, Name<Ident>),
-    ImportOp(T, Name<N.OpName<'static, N.ValueOpName>>), 
-    ImportType(T, Name<N.ProperName<'static, N.TypeName>>, Option<DataMembers<T>>),
-    ImportTypeOp(T, SourceToken, Name<N.OpName<'static, N.TypeOpName>>),
-    ImportClass(T, SourceToken, Name<N.ProperName<'static, N.ClassName>>) 
+    ImportOp(T, Name<N::OpName<N::OpNameType>>),
+    ImportType(T, Name<N::ProperName<N::ProperNameType>>, Option<DataMembers<T>>),
+    ImportTypeOp(T, SourceToken, Name<N::OpName<N::ProperNameType>>),
+    ImportClass(T, SourceToken, Name<N::ProperName<N::ProperNameType>>)
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 struct DataHead<T> {
     dataHdKeyword: SourceToken,
-    dataHdName: Name<N.ProperName<'static, N.TypeName>>,
-    dataHdVars: Vec<TypeVarBinding<T>>, 
+    dataHdName: Name<N::ProperName<N::ProperNameType>>,
+    dataHdVars: Vec<TypeVarBinding<T>>,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 struct DataCtor<T> {
     dataCtorAnn: T,
-    dataCtorName: Name<N.ProperName<'static, N.ConstructorName>>,
-    dataCtorFields: Vec<Type<T>>, 
+    dataCtorName: Name<N::ProperName<N::ProperNameType>>,
+    dataCtorFields: Vec<Type<T>>,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 struct ClassHead<T> {
     clsKeyword: SourceToken,
     clsSuper: Option<(OneOrDelimited<Constraint<T>>, SourceToken)>,
-    clsName: Name<N.ProperName<'static, N.ClassName>>,
+    clsName: Name<N::ProperName<N::ProperNameType>>,
     clsVars: Vec<TypeVarBinding<T>>,
     clsFundeps: Option<(SourceToken, Separated<ClassFundep>)>,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 enum ClassFundep {
-    FundepDetermined(SourceToken, NonEmpty<Name<Ident>>),
-    FundepDetermines(NonEmpty<Name<Ident>>, SourceToken, NonEmpty<Name<Ident>>),
+    FundepDetermined(SourceToken, Vec<Name<Ident>>),
+    FundepDetermines(Vec<Name<Ident>>, SourceToken, Vec<Name<Ident>>),
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 struct InstanceHead<T> {
     instKeyword: SourceToken,
     instNameSep: Option<(Name<Ident>, SourceToken)>,
     instConstraints: Option<(OneOrDelimited<Constraint<T>>, SourceToken)>,
-    instClass: QualifiedName<N.ProperName<'static, N.ClassName>>,
+    instClass: QualifiedName<N::ProperName<N::ProperNameType>>,
     instTypes: Vec<Type<T>>,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 enum Fixity {
     Infix,
     Infixl,
     Infixr,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 enum FixityOp {
-    FixityValue(QualifiedName<Either<Ident, N.ProperName<'static, N.ConstructorName>>>, SourceToken, Name<N.OpName<'static, N.ValueOpName>>), 
-    FixityType(SourceToken, QualifiedName<N.ProperName<'static, N.TypeName>>, SourceToken, Name<N.OpName<'static, N.TypeOpName>>),
+    FixityValue(QualifiedName<Result<Ident, N::ProperName<N::ProperNameType>>>, SourceToken, Name<N::OpName<N::OpNameType>>),
+    FixityType(SourceToken, QualifiedName<N::ProperName<N::ProperNameType>>, SourceToken, Name<N::OpName<N::ProperNameType>>),
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 struct FixityFields {
     fxtKeyword: (SourceToken, Fixity),
-    fxtPrec: (SourceToken, Integer),
+    fxtPrec: (SourceToken, i64),
     fxtOp: FixityOp,
 }
 
-
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 struct ValueBindingFields<T> {
     valName: Name<Ident>,
     valBinders: Vec<Binder<T>>,
@@ -321,13 +318,13 @@ struct ValueBindingFields<T> {
 }
 
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 enum Guarded<T> {
     Unconditional(SourceToken, Where<T>),
-    Guarded(NonEmpty<GuardedExpr<T>>),
+    Guarded(Vec<GuardedExpr<T>>),
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 struct GuardedExpr<T> {
     grdBar: SourceToken,
     grdPatterns: Separated<PatternGuard<T>>,
@@ -335,84 +332,90 @@ struct GuardedExpr<T> {
     grdWhere: Where<T>,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 struct PatternGuard<T> {
     patBinder: Option<(Binder<T>, SourceToken)>,
     patExpr: Expr<T>,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 enum Foreign<T> {
     ForeignValue(Labeled<Name<Ident>, Type<T>>),
-    ForeignData(SourceToken, Labeled<Name<N.ProperName<'static, N.TypeName>>, Type<T>>), 
-    ForeignKind(SourceToken, Name<N.ProperName<'static, N.TypeName>>),
+    ForeignData(SourceToken, Labeled<Name<N::ProperName<N::ProperNameType>>, Type<T>>),
+    ForeignKind(SourceToken, Name<N::ProperName<N::ProperNameType>>),
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
+pub enum RRole {
+    Nominal,
+    Representational,
+    Phantom,
+}
+
+#[derive(Debug, PartialEq,  PartialOrd)]
 struct Role {
     roleTok: SourceToken,
-    roleValue: R::Role, 
+    roleValue: RRole,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 pub enum Expr<T> {
     ExprHole(T, Name<Ident>),
     ExprSection(T, SourceToken),
     ExprIdent(T, QualifiedName<Ident>),
-    ExprConstructor(T, QualifiedName<N.ProperName<'static, N.ConstructorName>>), 
-    ExprBoolean(T, SourceToken, Bool), 
-    ExprChar(T, SourceToken, Char),
-    ExprString(T, SourceToken, PSString), 
-    ExprNumber(T, SourceToken, Either<Integer, Double>), 
-    ExprArray(T, Delimited<Expr<T>>),
-    ExprRecord(T, Delimited<RecordLabeled<Expr<T>>>),
-    ExprParens(T, Wrapped<Expr<T>>),
-    ExprTyped(T, Expr<T>, SourceToken, Type<T>),
-    ExprInfix(T, Expr<T>, Wrapped<Expr<T>>, Expr<T>),
-    ExprOp(T, Expr<T>, QualifiedName<N.OpName<'static, N.ValueOpName>>, Expr<T>), 
-    ExprOpName(T, QualifiedName<N.OpName<'static, N.ValueOpName>>),
-    ExprNegate(T, SourceToken, Expr<T>),
-    ExprRecordAccessor(T, RecordAccessor<T>),
-    ExprRecordUpdate(T, Expr<T>, DelimitedNonEmpty<RecordUpdate<T>>),
-    ExprApp(T, Expr<T>, Expr<T>),
-    ExprVisibleTypeApp(T, Expr<T>, SourceToken, Type<T>),
-    ExprLambda(T, Lambda<T>),
-    ExprIf(T, IfThenElse<T>),
-    ExprCase(T, CaseOf<T>),
-    ExprLet(T, LetIn<T>),
+    ExprConstructor(T, QualifiedName<N::ProperName<N::ProperNameType>>),
+    ExprBoolean(T, SourceToken, bool),
+    ExprChar(T, SourceToken, char),
+    ExprString(T, SourceToken, N::PSString),
+    ExprNumber(T, SourceToken, Result<i64, f64>),
+    ExprArray(T, Delimited<Box<Expr<T>>>),
+    ExprRecord(T, Delimited<RecordLabeled<Box<Expr<T>>>>),
+    ExprParens(T, Wrapped<Box<Expr<T>>>),
+    ExprTyped(T, Box<Expr<T>>, SourceToken, Type<T>),
+    ExprInfix(T, Box<Expr<T>>, Wrapped<Box<Expr<T>>>, Box<Expr<T>>),
+    ExprOp(T, Box<Expr<T>>, QualifiedName<N::OpName<N::OpNameType>>, Box<Expr<T>>),
+    ExprOpName(T, QualifiedName<N::OpName<N::OpNameType>>),
+    ExprNegate(T, SourceToken, Box<Expr<T>>),
+    ExprRecordAccessor(T, Box<RecordAccessor<T>>),
+    ExprRecordUpdate(T, Box<Expr<T>>, DelimitedNonEmpty<Box<RecordUpdate<T>>>),
+    ExprApp(T, Box<Expr<T>>, Box<Expr<T>>),
+    ExprVisibleTypeApp(T, Box<Expr<T>>, SourceToken, Type<T>),
+    ExprLambda(T, Box<Lambda<T>>),
+    ExprIf(T, Box<IfThenElse<T>>),
+    ExprCase(T, Box<CaseOf<T>>),
+    ExprLet(T, Box<LetIn<T>>),
     ExprDo(T, DoBlock<T>),
-    ExprAdo(T, AdoBlock<T>),
+    ExprAdo(T, Box<AdoBlock<T>>),
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 enum RecordLabeled<T> {
-    RecordPun(Name<Ident>), 
-    RecordField(Label, SourceToken, T), 
+    RecordPun(Name<Ident>),
+    RecordField(Label, SourceToken, T),
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 enum RecordUpdate<T> {
-    RecordUpdateLeaf(Label, SourceToken, Expr<T>),
-    RecordUpdateBranch(Label, DelimitedNonEmpty<RecordUpdate<T>>), 
+    RecordUpdateLeaf(Label, SourceToken, Box<Expr<T>>),
+    RecordUpdateBranch(Label, DelimitedNonEmpty<Box<RecordUpdate<T>>>),
 }
 
-
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 struct RecordAccessor<T> {
     recExpr: Expr<T>,
     recDot: SourceToken,
-    recPath: Separated<Label>, 
+    recPath: Separated<Label>,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 struct Lambda<T> {
     lmbSymbol: SourceToken,
-    lmbBinders: NonEmpty<Binder<T>>,
+    lmbBinders: Vec<Binder<T>>,
     lmbArr: SourceToken,
     lmbBody: Expr<T>,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 struct IfThenElse<T> {
     iteIf: SourceToken,
     iteCond: Expr<T>,
@@ -422,69 +425,69 @@ struct IfThenElse<T> {
     iteFalse: Expr<T>,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 struct CaseOf<T> {
     caseKeyword: SourceToken,
     caseHead: Separated<Expr<T>>,
     caseOf: SourceToken,
-    caseBranches: NonEmpty<(Separated<Binder<T>>, Guarded<T>)>, 
+    caseBranches: Vec<(Separated<Binder<T>>, Guarded<T>)>,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 struct LetIn<T> {
     letKeyword: SourceToken,
-    letBindings: NonEmpty<LetBinding<T>>,
+    letBindings: Vec<LetBinding<T>>,
     letIn: SourceToken,
     letBody: Expr<T>,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 struct Where<T> {
     whereExpr: Expr<T>,
-    whereBindings: Option<(SourceToken, NonEmpty<LetBinding<T>>)>,
+    whereBindings: Option<(SourceToken, Vec<LetBinding<T>>)>,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 enum LetBinding<T> {
     LetBindingSignature(T, Labeled<Name<Ident>, Type<T>>),
     LetBindingName(T, ValueBindingFields<T>),
     LetBindingPattern(T, Binder<T>, SourceToken, Where<T>),
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 struct DoBlock<T> {
     doKeyword: SourceToken,
-    doStatements: NonEmpty<DoStatement<T>>, 
+    doStatements: Vec<DoStatement<T>>,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 enum DoStatement<T> {
-    DoLet(SourceToken, NonEmpty<LetBinding<T>>),
+    DoLet(SourceToken, Vec<LetBinding<T>>),
     DoDiscard(Expr<T>),
     DoBind(Binder<T>, SourceToken, Expr<T>),
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 struct AdoBlock<T> {
     adoKeyword: SourceToken,
-    adoStatements: Vec<DoStatement<T>>, // Using Vec for lists
+    adoStatements: Vec<DoStatement<T>>,
     adoIn: SourceToken,
-    adoResult: Expr<T>, 
+    adoResult: Expr<T>,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq,  PartialOrd)]
 enum Binder<T> {
     BinderWildcard(T, SourceToken),
     BinderVar(T, Name<Ident>),
-    BinderNamed(T, Name<Ident>, SourceToken, Binder<T>),
-    BinderConstructor(T, QualifiedName<N.ProperName<'static, N.ConstructorName>>, Vec<Binder<T>>),
-    BinderBoolean(T, SourceToken, Bool), 
-    BinderChar(T, SourceToken, Char),
-    BinderString(T, SourceToken, PSString),
-    BinderNumber(T, Option<SourceToken>, SourceToken, Either<Integer, Double>), 
-    BinderArray(T, Delimited<Binder<T>>),
-    BinderRecord(T, Delimited<RecordLabeled<Binder<T>>>),
-    BinderParens(T, Wrapped<Binder<T>>),
-    BinderTyped(T, Binder<T>, SourceToken, Type<T>),
-    BinderOp(T, Binder<T>, QualifiedName<N.OpName<'static, N.ValueOpName>>, Binder<T>), 
+    BinderNamed(T, Name<Ident>, SourceToken, Box<Binder<T>>),
+    BinderConstructor(T, QualifiedName<N::ProperName<N::ProperNameType>>, Vec<Binder<T>>),
+    BinderBoolean(T, SourceToken, bool),
+    BinderChar(T, SourceToken, char),
+    BinderString(T, SourceToken, N::PSString),
+    BinderNumber(T, Option<SourceToken>, SourceToken, Result<i64, f64>),
+    BinderArray(T, Delimited<Box<Binder<T>>>),
+    BinderRecord(T, Delimited<RecordLabeled<Box<Binder<T>>>>),
+    BinderParens(T, Wrapped<Box<Binder<T>>>),
+    BinderTyped(T, Box<Binder<T>>, SourceToken, Type<T>),
+    BinderOp(T, Box<Binder<T>>, QualifiedName<N::OpName<N::OpNameType>>, Box<Binder<T>>),
 }

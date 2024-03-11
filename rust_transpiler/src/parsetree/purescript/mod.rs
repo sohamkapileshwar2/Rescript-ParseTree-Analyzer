@@ -2,4 +2,5 @@ pub fn purescript_function() {
     println!("Inside Purescript Module!");
 }
 
-mod types;
+pub mod types;
+mod names;

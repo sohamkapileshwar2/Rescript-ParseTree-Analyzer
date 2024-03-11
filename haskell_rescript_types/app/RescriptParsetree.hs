@@ -612,7 +612,7 @@ data ExtensionConstructor = ExtensionConstructor
 instance ToJSON ExtensionConstructor where
   toJSON = genericToJSON $ defaultOptions {tagSingleConstructors = True}
 
-instance FromJSON ExtensionConstructor where
+instance FromJSON ExtensionConstructor whereConstructorArguments
   parseJSON = genericParseJSON $ defaultOptions {tagSingleConstructors = True}
 
 data ExtensionConstructorKind =

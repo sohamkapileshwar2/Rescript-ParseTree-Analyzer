@@ -1,5 +1,6 @@
 mod parsetree;
 use parsetree::purescript::purescript_function;
+use parsetree::rescript::rescript_function;
 
 
 fn main() {
@@ -10,8 +11,9 @@ fn main() {
     test(&mut s);
     println!("{s}");
 
-    println!("Testing Purescript Module");
+    println!("Testing Modules");
     purescript_function();
+    rescript_function();
 }
 
 fn test(some_string: &mut String) {

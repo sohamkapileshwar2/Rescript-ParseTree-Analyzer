@@ -13,6 +13,7 @@ First, you need to install the project dependencies. Run the following command i
 ```sh
 cargo install
 ```
+
 ```sh
 cargo install cargo-watch
 ```
@@ -23,4 +24,8 @@ cargo watch -x check
 
 ```sh
 cargo watch -x run
+```
+
+```sh
+cargo-modules generate tree --fns
 ```

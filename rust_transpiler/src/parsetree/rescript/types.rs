@@ -1,16 +1,16 @@
-use serde::{Serialize, Deserialize};
+#![allow(non_snake_case)]
+// use serde::{Serialize, Deserialize};
 
 
 type Structure = Vec<StructureItem>;
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct StructureItem {
     pstr_desc: StructureItemDesc, // Assuming StructureItemDesc is another type you'll define
     pstr_loc: Location,            // Assuming Location is another type you'll define
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-#[serde(tag = "type")]
+#[derive( Debug, PartialEq)]
 enum StructureItemDesc {
     PstrEval(Expression, Attributes),
     PstrValue(RecFlag, Vec<ValueBinding>),
@@ -32,14 +32,14 @@ enum StructureItemDesc {
 
 // Location Types
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct Location {
     locStart: Position, // Assuming Position is another type you'll define
     locEnd: Position,
     locGhost: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct Position {
     posFname: String,
     posLnum: i32,
@@ -49,7 +49,7 @@ struct Position {
 
 // Longident Types
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum Longident {
     Lident(String),
     Ldot(Box<Longident>, String),
@@ -57,59 +57,59 @@ enum Longident {
 }
 
 // Module Types
- 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+
+#[derive( Debug, PartialEq)]
 struct ModuleBinding {
-    pmbName: Loc<String>, 
-    pmbExpr: ModuleExpr, 
+    pmbName: Loc<String>,
+    pmbExpr: ModuleExpr,
     pmbAttributes: Attributes,
-    pmbLoc: Location, 
+    pmbLoc: Location,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct ModuleExpr {
     pmodDesc: ModuleExprDesc, // Direct use, assuming you'll define or replace
     pmodLoc: Location, // Previously defined
     pmodAttributes: Attributes, // Direct use, keeping track of previous context
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum ModuleExprDesc {
     PmodIdent(Loc<Longident>),
-    PmodStructure(Structure), 
-    PmodFunctor(Loc<String>, Option<ModuleType>, ModuleExpr),
-    PmodApply(ModuleExpr, ModuleExpr),
-    PmodConstraint(ModuleExpr, ModuleType),
+    PmodStructure(Structure),
+    PmodFunctor(Loc<String>, Option<ModuleType>, Box<ModuleExpr>),
+    PmodApply(Box<ModuleExpr>, Box<ModuleExpr>),
+    PmodConstraint(Box<ModuleExpr>, ModuleType),
     PmodUnpack(Expression),
     PmodExtension(Extension),
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct ModuleType {
-    pmtyDesc: ModuleTypeDesc, // Direct naming, assuming definition elsewhere
+    pmtyDesc: Box<ModuleTypeDesc>, // Direct naming, assuming definition elsewhere
     pmtyLoc: Location, // Using the previously defined Location type
     pmtyAttributes: Attributes, // Direct naming, assuming definition elsewhere
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum ModuleTypeDesc {
     PmtyIdent(Loc<Longident>),
     PmtySignature(Signature),
     PmtyFunctor(Loc<String>, Option<ModuleType>, ModuleType),
     PmtyWith(ModuleType, WithConstraint),
-    Pmty_typeof(Expression),
-    Pmty_extension(Extension),
+    PmtyTypeof(Expression),
+    PmtyExtension(Extension),
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-struct ModuleDecration {
+#[derive( Debug, PartialEq)]
+struct ModuleDeclaration {
     pmdName: Loc<String>,
     pmdType: Option<ModuleType>,
     pmdAttributes: Attributes,
     pmdLoc: Location,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct ModuleTypeDeclaration {
     pmtdName: Loc<String>,
     pmtdType: Option<ModuleType>,
@@ -119,7 +119,7 @@ struct ModuleTypeDeclaration {
 
 // Open Desctiption
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct OpenDescription {
     popenLid: Loc<Longident>,
     popenOverride: bool,
@@ -130,7 +130,7 @@ struct OpenDescription {
 // Include Declaration
 type IncludeDescription = IncludeInfos<ModuleType>;
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct IncludeInfos<T> {
     pinclMod: T,
     pinclLoc: Location,
@@ -139,7 +139,7 @@ struct IncludeInfos<T> {
 
 type IncludeDeclaration =  IncludeInfos<ModuleExpr>;
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum WithConstraint {
     PwithType(Loc<Longident>, TypeDeclaration),
     PwithModule(Loc<Longident>, Loc<Longident>),
@@ -151,7 +151,7 @@ enum WithConstraint {
 
 type ClassTypeDeclaration = ClassInfos<ClassType>;
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct ClassInfos<T> {
     pciVirt: VirtualFlag,
     pciParams: Vec<(CoreType, Variance)>,
@@ -161,13 +161,13 @@ struct ClassInfos<T> {
     pciAttributes: Attributes,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct ClassStructure {
     pcstrSelf: Pattern,
     pcstrFields: Vec<ClassField>,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct ClassField {
     pcfDesc: ClassFieldDesc,
     pcfLoc: Location,
@@ -175,7 +175,7 @@ struct ClassField {
 }
 
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum ClassFieldDesc {
     PcfInherit(()),
     PcfVal(Loc<Label>, MutableFlag, ClassFieldKind),
@@ -186,20 +186,20 @@ enum ClassFieldDesc {
     PcfExtension(Extension),
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum ClassFieldKind {
     CfkVirtual(CoreType),
     CfkConcrete(OverrideFlag, Expression),
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct ClassType {
-    pctyDesc: ClassTypeDesc,
+    pctyDesc: Box<ClassTypeDesc>,
     pctyLoc: Location,
     pctyAttributes: Attributes,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum ClassTypeDesc {
     PctyConstr(Loc<Longident>, Vec<CoreType>),
     PctySignature(ClassSignature),
@@ -208,20 +208,20 @@ enum ClassTypeDesc {
     PctyOpen(OverrideFlag, Loc<Longident>, ClassType),
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct ClassSignature {
     pcsigSelf: CoreType,
     pcsigFields: Vec<ClassTypeField>,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct ClassTypeField {
     pctfDesc: ClassTypeFieldDesc,
     pctfLoc: Location,
     pctfAttributes: Attributes,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum ClassTypeFieldDesc {
     PctfInherit(ClassType),
     PctfVal(Loc<Label>, MutableFlag, CoreType),
@@ -231,33 +231,33 @@ enum ClassTypeFieldDesc {
     PctfExtension(Extension),
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct ClassExpr {
-    pclDesc: ClassExprDesc,
+    pclDesc: Box<ClassExprDesc>,
     pclLoc: Location,
     pclAttributes: Attributes,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum ClassExprDesc {
     PclStructure(ClassStructure),
     PclFunctor(Loc<String>, Option<ModuleType>, ClassExpr),
     PclApply(ClassExpr, ClassExpr),
-    PclLet(RecFlag, Vec<ClassLetBinding>, ClassExpr),
+    PclLet(RecFlag, Vec<ValueBinding>, ClassExpr),
     PclConstraint(ClassExpr, ClassType),
     PclExtension(Extension),
 }
 
 // Expression Types
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct Expression {
-    pexpDesc: ExpressionDesc,
+    pexpDesc: Box<ExpressionDesc>,
     pexpLoc: Location,
     pexpAttributes: Attributes,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum ExpressionDesc {
     PexpIdent(Loc<Longident>),
     PexpConstant(Constant),
@@ -268,24 +268,33 @@ enum ExpressionDesc {
     PexpMatch(Expression, Vec<Case>, Option<Expression>),
     PexpTry(Expression, Vec<Case>),
     PexpTuple(Vec<Expression>),
+    PexpConstruct(Loc<Longident>, Option<Expression>),
+    PexpVariant(Label, Option<Expression>),
     PexpRecord(Vec<(Loc<Longident>, Expression)>, Option<Expression>),
     PexpField(Expression, Loc<Longident>),
-    PexpSetField(Expression, Loc<Longident>, Expression),
+    PexpSetfield(Expression, Loc<Longident>, Expression),
     PexpArray(Vec<Expression>),
-    PexpIfThenElse(Expression, Expression, Option<Expression>),
+    PexpIfthenelse(Expression, Expression, Option<Expression>),
     PexpSequence(Expression, Expression),
     PexpWhile(Expression, Expression),
-    PexpFor(Loc<String>, Expression, Expression, DirectionFlag, Expression),
+    PexpFor(Pattern, Expression, Expression, DirectionFlag, Expression),
     PexpConstraint(Expression, CoreType),
     PexpCoerce(Expression, Option<CoreType>, CoreType),
-    PexpSend(Expression, Loc<Longident>),
+    PexpSend(Expression, Loc<Label>),
     PexpNew(Loc<Longident>),
-    PexpSetField(Loc<Longident>, Loc<Longident>, Expression),
-    PexpOverride(Vec<(Loc<Longident>, Expression)>),
-    PexpLetModule(Loc<String>, ModuleExpr, Expression),
-    PexpLetOpen(Loc<String>, Loc<Longident>, Expression),
+    PexpSetinstvar(Loc<Label>, Expression),
+    PexpOverride(Vec<(Loc<Label>, Expression)>),
+    PexpLetmodule(Loc<String>, ModuleExpr, Expression),
+    PexpLetexception(ExtensionConstructor, Expression),
+    PexpAssert(Expression),
+    PexpLazy(Expression),
+    PexpPoly(Expression, Option<CoreType>),
+    PexpObject(ClassStructure),
+    PexpNewtype(Loc<String>, Expression),
+    PexpPack(ModuleExpr),
+    PexpOpen(OverrideFlag, Loc<Longident>, Expression),
     PexpExtension(Extension),
-    PexpUnreachable(),
+    PexpUnreachable,
 }
 
 // Attribute Types
@@ -296,7 +305,7 @@ type Attribute = (Loc<String>, Payload);
 
 // Payload Types
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum Payload {
     PStr(Structure),
     PSig(Signature),
@@ -307,13 +316,13 @@ enum Payload {
 // Signature Types
 type Signature = Vec<SignatureItem>;
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct SignatureItem {
     psigDesc: SignatureItemDesc,
     psigLoc: Location,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum SignatureItemDesc {
     PsigValue(ValueDescription),
     PsigType(TypeDeclaration),
@@ -332,15 +341,14 @@ enum SignatureItemDesc {
 
 // Core Types
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct CoreType {
-    ptypDesc: CoreTypeDesc,
+    ptypDesc: Box<CoreTypeDesc>,
     ptypLoc: Location,
     ptypAttributes: Attributes,
 }
 
-
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum CoreTypeDesc {
     PtypAny,
     PtypVar(String),
@@ -362,19 +370,19 @@ type PackageType = (Loc<Longident>, Vec<(Loc<Longident>, CoreType)>);
 
 // Object Fields Types
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum ObjectField {
     Otag(Loc<Label>, Attributes, CoreType),
     Oinherit(CoreType),
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum RowField {
     Rtag(Loc<Label>, Attributes, bool, Vec<CoreType>),
     Rinherit(CoreType),
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct ValueBinding {
     pvbPat: Pattern,
     pvbExpr: Expression,
@@ -382,20 +390,20 @@ struct ValueBinding {
     pvbLoc: Location,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct Case {
     pcLhs: Pattern,
     pcGuard: Option<Expression>,
     pcRhs: Expression,
 }
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct Pattern {
-    ppatDesc: PatternDesc,
+    ppatDesc: Box<PatternDesc>,
     ppatLoc: Location,
     ppatAttributes: Attributes,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum PatternDesc {
     PpatAny,
     PpatVar(Loc<String>),
@@ -417,10 +425,10 @@ enum PatternDesc {
     PpatOpen(Loc<Longident>, Pattern),
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct Extension(Loc<String>, Payload);
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct ExtensionConstructor {
     pextName: Loc<String>,
     pextKind: ExtensionConstructorKind,
@@ -428,14 +436,14 @@ struct ExtensionConstructor {
     pextAttributes: Attributes,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum ExtensionConstructorKind {
-    PextDecl(Vec<ExtensionConstructorArg>, Option<CoreType>),
+    PextDecl(ConstructorArguments, Option<CoreType>),
     PextRebind(Loc<Longident>),
 }
 
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct ConstructorDeclaration {
     pcdName: Loc<String>,
     pcdArgs: ConstructorArguments,
@@ -444,13 +452,13 @@ struct ConstructorDeclaration {
     pcdAttributes: Attributes,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum ConstructorArguments {
     PcstrTuple(Vec<CoreType>),
     PcstrRecord(Vec<(Loc<Longident>, CoreType, MutableFlag)>),
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct ValueDescription {
     pvalName: Loc<String>,
     pvalType: CoreType,
@@ -459,19 +467,19 @@ struct ValueDescription {
     pvalLoc: Location,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct TypeDeclaration {
     ptypeName: Loc<String>,
     ptypeParams: Vec<Loc<String>>,
     ptypeCtxt: Vec<CoreType>,
-    ptypeKind: TypeDeclarationKind,
+    ptypeKind: TypeKind,
     ptypePrivate: PrivateFlag,
     ptypeManifest: Option<CoreType>,
     ptypeAttributes: Attributes,
     ptypeLoc: Location,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct TypeExtension {
     ptyextPath: Loc<Longident>,
     ptyextParams: Vec<(CoreType, Variance)>,
@@ -480,7 +488,7 @@ struct TypeExtension {
     ptyextAttributes: Attributes,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum TypeKind {
     PtypeAbstract,
     PtypeVariant(Vec<ConstructorDeclaration>),
@@ -488,7 +496,7 @@ enum TypeKind {
     PtypeOpen,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct LabelDeclaration {
     pldName: Loc<String>,
     pldMutable: MutableFlag,
@@ -497,7 +505,7 @@ struct LabelDeclaration {
     pldAttributes: Attributes,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum Constant {
     PconstInteger(String, Option<char>),
     PconstChar(i32),
@@ -505,43 +513,43 @@ enum Constant {
     PconstFloat(String, Option<char>),
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum RecFlag {
     Nonrecursive,
     Recursive,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum DirectionFlag {
     Upto,
     Downto,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum PrivateFlag {
     Private,
     Public,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum MutableFlag {
     Immutable,
     Mutable,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum VirtualFlag {
     Virtual,
     Concrete,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum OverrideFlag {
     Override,
     Fresh,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum ClosedFlag {
     Closed,
     Open,
@@ -549,7 +557,7 @@ enum ClosedFlag {
 
 type Label = String;
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum ArgLabel {
     Nolabel,
     Labelled(String),
@@ -557,13 +565,13 @@ enum ArgLabel {
 }
 
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 struct Loc<T> {
     txt: T,
     loc: Location,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive( Debug, PartialEq)]
 enum Variance {
     Covariant,
     Contravariant,
