@@ -1,22 +1,28 @@
 #![allow(dead_code)]
 #![allow(non_snake_case)]
 use std::fmt::Debug;
-
+use serde::{Serialize, Deserialize};
 use super::names as N;
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 pub struct SourcePos {
     pub srcLine: i32,
     pub srcColumn: i32,
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 pub struct SourceRange {
     pub srcStart: SourcePos,
     pub srcEnd: SourcePos,
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 pub enum Comment<L: Debug + PartialEq> {
     Comment(String),
     Space(i32),
@@ -24,12 +30,16 @@ pub enum Comment<L: Debug + PartialEq> {
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+
 pub enum LineFeed {
     LF,
     CRLF,
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 pub struct TokenAnn {
     pub tokRange: SourceRange,
     pub tokLeadingComments: Vec<Comment<LineFeed>>,
@@ -37,12 +47,16 @@ pub struct TokenAnn {
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
 pub enum SourceStyle {
     ASCII,
     Unicode,
 }
 
+
 #[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 pub enum Token {
     TokLeftParen,
     TokRightParen,
@@ -80,23 +94,29 @@ pub enum Token {
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 pub struct SourceToken {
     pub tokAnn: TokenAnn,
     pub tokValue: Token,
 }
-
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 pub struct Ident {
     pub getIdent: String,
 }
-
 #[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 pub struct Name<A> {
     pub nameTok: SourceToken,
     pub nameValue: A,
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 pub struct QualifiedName<A> {
     pub qualTok: SourceToken,
     pub qualModule: Option<N::ModuleName>,
@@ -104,12 +124,16 @@ pub struct QualifiedName<A> {
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 pub struct Label {
     pub lblTok: SourceToken,
     pub lblName: String,
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 pub struct Wrapped<A> {
     pub wrpOpen: SourceToken,
     pub wrpValue: A,
@@ -117,12 +141,16 @@ pub struct Wrapped<A> {
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 pub struct Separated<A> {
     pub sepHead: A,
     pub sepTail: Vec<(SourceToken, A)>,
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 pub struct Labeled<A, B> {
     pub lblLabel: A,
     pub lblSep: SourceToken,
@@ -133,12 +161,16 @@ pub type Delimited<A> = Wrapped<Option<Separated<A>>>;
 pub type DelimitedNonEmpty<A> = Wrapped<Separated<A>>;
 
 #[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 pub enum OneOrDelimited<A> {
     One(A),
     Many(DelimitedNonEmpty<A>),
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 pub enum Type<A> {
     TypeVar(A, Name<Ident>),
     TypeConstructor(A, QualifiedName<N::ProperName<N::ProperNameType>>),
@@ -161,18 +193,24 @@ pub enum Type<A> {
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 pub enum TypeVarBinding<A> {
     TypeVarKinded(Wrapped<Labeled<(Option<SourceToken>, Name<Ident>), Type<A>>>),
     TypeVarName((Option<SourceToken>, Name<Ident>)),
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 pub enum Constraint<A> {
     Constraint(A, QualifiedName<N::ProperName<N::ProperNameType>>, Vec<Type<A>>),
     ConstraintParens(A, Wrapped<Box<Constraint<A>>>), // Box ???
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 pub struct Row<A> {
     pub rowLabels: Option<Separated<Labeled<Label, Box<Type<A>>>>>,
     pub rowTail: Option<(SourceToken, Box<Type<A>>)>,
@@ -180,6 +218,8 @@ pub struct Row<A> {
 
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 pub struct Module<A> {
     pub modAnn: A,
     pub modKeyword: SourceToken,
@@ -192,6 +232,8 @@ pub struct Module<A> {
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 pub enum Export<A> {
     ExportValue(A, Name<Ident>),
     ExportOp(A, Name<N::OpName<N::OpNameType>>),
@@ -202,6 +244,8 @@ pub enum Export<A> {
 }
 // Making New Types
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 pub enum DataMembers<T> {
     DataAll(T, SourceToken),
     DataEnumerated(T, Delimited<Name<N::ProperName<N::ProperNameType>>>),
@@ -209,6 +253,8 @@ pub enum DataMembers<T> {
 
 // Assuming types like DataHead, SourceToken, Separated, DataCtor, Type, Name, N.ProperName, ClassHead, NonEmpty, Labeled, Instance, InstanceHead, ValueBindingFields, FixityFields, Foreign, and Role are defined
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum Declaration<T> {
     DeclData(T, DataHead<T>, Option<(SourceToken, Separated<DataCtor<T>>)>),
     DeclType(T, DataHead<T>, SourceToken, Type<T>),
@@ -225,17 +271,23 @@ enum Declaration<T> {
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct Instance<T> {
     instHead: InstanceHead<T>,
     instBody: Option<(SourceToken, Vec<InstanceBinding<T>>)>,
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum InstanceBinding<T> {
     InstanceBindingSignature(T, Labeled<Name<Ident>, Type<T>>),
     InstanceBindingName(T, ValueBindingFields<T>),
 }
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct ImportDecl<T> {
     impAnn: T,
     impKeyword: SourceToken,
@@ -244,6 +296,8 @@ struct ImportDecl<T> {
     impQual: Option<(SourceToken, Name<N::ModuleName>)>,
 }
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum Import<T> {
     ImportValue(T, Name<Ident>),
     ImportOp(T, Name<N::OpName<N::OpNameType>>),
@@ -253,6 +307,8 @@ enum Import<T> {
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct DataHead<T> {
     dataHdKeyword: SourceToken,
     dataHdName: Name<N::ProperName<N::ProperNameType>>,
@@ -260,6 +316,8 @@ struct DataHead<T> {
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct DataCtor<T> {
     dataCtorAnn: T,
     dataCtorName: Name<N::ProperName<N::ProperNameType>>,
@@ -267,6 +325,8 @@ struct DataCtor<T> {
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct ClassHead<T> {
     clsKeyword: SourceToken,
     clsSuper: Option<(OneOrDelimited<Constraint<T>>, SourceToken)>,
@@ -276,12 +336,16 @@ struct ClassHead<T> {
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum ClassFundep {
     FundepDetermined(SourceToken, Vec<Name<Ident>>),
     FundepDetermines(Vec<Name<Ident>>, SourceToken, Vec<Name<Ident>>),
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct InstanceHead<T> {
     instKeyword: SourceToken,
     instNameSep: Option<(Name<Ident>, SourceToken)>,
@@ -291,6 +355,8 @@ struct InstanceHead<T> {
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum Fixity {
     Infix,
     Infixl,
@@ -298,12 +364,16 @@ enum Fixity {
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum FixityOp {
     FixityValue(QualifiedName<Result<Ident, N::ProperName<N::ProperNameType>>>, SourceToken, Name<N::OpName<N::OpNameType>>),
     FixityType(SourceToken, QualifiedName<N::ProperName<N::ProperNameType>>, SourceToken, Name<N::OpName<N::ProperNameType>>),
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct FixityFields {
     fxtKeyword: (SourceToken, Fixity),
     fxtPrec: (SourceToken, i64),
@@ -311,6 +381,8 @@ struct FixityFields {
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct ValueBindingFields<T> {
     valName: Name<Ident>,
     valBinders: Vec<Binder<T>>,
@@ -319,12 +391,16 @@ struct ValueBindingFields<T> {
 
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum Guarded<T> {
     Unconditional(SourceToken, Where<T>),
     Guarded(Vec<GuardedExpr<T>>),
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct GuardedExpr<T> {
     grdBar: SourceToken,
     grdPatterns: Separated<PatternGuard<T>>,
@@ -333,12 +409,16 @@ struct GuardedExpr<T> {
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct PatternGuard<T> {
     patBinder: Option<(Binder<T>, SourceToken)>,
     patExpr: Expr<T>,
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum Foreign<T> {
     ForeignValue(Labeled<Name<Ident>, Type<T>>),
     ForeignData(SourceToken, Labeled<Name<N::ProperName<N::ProperNameType>>, Type<T>>),
@@ -346,6 +426,8 @@ enum Foreign<T> {
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 pub enum RRole {
     Nominal,
     Representational,
@@ -353,12 +435,16 @@ pub enum RRole {
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct Role {
     roleTok: SourceToken,
     roleValue: RRole,
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 pub enum Expr<T> {
     ExprHole(T, Name<Ident>),
     ExprSection(T, SourceToken),
@@ -389,18 +475,24 @@ pub enum Expr<T> {
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum RecordLabeled<T> {
     RecordPun(Name<Ident>),
     RecordField(Label, SourceToken, T),
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum RecordUpdate<T> {
     RecordUpdateLeaf(Label, SourceToken, Box<Expr<T>>),
     RecordUpdateBranch(Label, DelimitedNonEmpty<Box<RecordUpdate<T>>>),
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct RecordAccessor<T> {
     recExpr: Expr<T>,
     recDot: SourceToken,
@@ -408,6 +500,8 @@ struct RecordAccessor<T> {
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct Lambda<T> {
     lmbSymbol: SourceToken,
     lmbBinders: Vec<Binder<T>>,
@@ -416,6 +510,8 @@ struct Lambda<T> {
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct IfThenElse<T> {
     iteIf: SourceToken,
     iteCond: Expr<T>,
@@ -426,6 +522,8 @@ struct IfThenElse<T> {
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct CaseOf<T> {
     caseKeyword: SourceToken,
     caseHead: Separated<Expr<T>>,
@@ -434,6 +532,8 @@ struct CaseOf<T> {
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct LetIn<T> {
     letKeyword: SourceToken,
     letBindings: Vec<LetBinding<T>>,
@@ -442,12 +542,16 @@ struct LetIn<T> {
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct Where<T> {
     whereExpr: Expr<T>,
     whereBindings: Option<(SourceToken, Vec<LetBinding<T>>)>,
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum LetBinding<T> {
     LetBindingSignature(T, Labeled<Name<Ident>, Type<T>>),
     LetBindingName(T, ValueBindingFields<T>),
@@ -455,12 +559,16 @@ enum LetBinding<T> {
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct DoBlock<T> {
     doKeyword: SourceToken,
     doStatements: Vec<DoStatement<T>>,
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum DoStatement<T> {
     DoLet(SourceToken, Vec<LetBinding<T>>),
     DoDiscard(Expr<T>),
@@ -468,6 +576,8 @@ enum DoStatement<T> {
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct AdoBlock<T> {
     adoKeyword: SourceToken,
     adoStatements: Vec<DoStatement<T>>,
@@ -476,6 +586,8 @@ struct AdoBlock<T> {
 }
 
 #[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum Binder<T> {
     BinderWildcard(T, SourceToken),
     BinderVar(T, Name<Ident>),
