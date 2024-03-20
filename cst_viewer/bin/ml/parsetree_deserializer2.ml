@@ -88,7 +88,7 @@ and core_type_desc_of_yojson (json : Yojson.Safe.t) : core_type_desc =
   | `Assoc [("tag", `String "PtypArrow"); ("contents", jsons)] ->
     (match jsons with
      | `List [label; core_type1_json; core_type2_json] ->
-       let label = label_of_yojson label in
+       let label = Asttypes_deserializer.arg_label_of_yojson label in
        let core_type1 = core_type_of_yojson core_type1_json in
        let core_type2 = core_type_of_yojson core_type2_json in
        Ptyp_arrow (label, core_type1, core_type2)
@@ -142,8 +142,6 @@ and core_type_desc_of_yojson (json : Yojson.Safe.t) : core_type_desc =
        let core_type = core_type_of_yojson core_type_json in
        Ptyp_poly (stringss, core_type)
      | _ -> failwith "Invalid JSON format for Ptyp_poly")
-  | `Assoc [("tag", `String "PtypPackage"); ("contents", jsons)] -> package_type_of_yojson jsons
-  | `Assoc [("tag", `String "PtypExtension"); ("contents", jsons)] -> extension_of_yojson jsons
   | _ -> failwith "Invalid JSON format for core_type_desc"
   
 and package_type_of_yojson (json : Yojson.Safe.t) : package_type =
@@ -321,7 +319,7 @@ and expression_desc_of_yojson (json : Yojson.Safe.t) : expression_desc =
     (match jsons with
      | `List [rec_flag; `List value_bindings_json_arr; expression_json] ->
        let rec_flag = Asttypes_deserializer.rec_flag_of_yojson rec_flag in
-       let value_bindings = List.map value_bindings_of_yojson value_bindings_json_arr in
+       let value_bindings = List.map value_binding_of_yojson value_bindings_json_arr in
        let expression = expression_of_yojson expression_json in
        Pexp_let (rec_flag, value_bindings, expression)
      | _ -> failwith "Invalid JSON format for Pexp_let")
@@ -624,11 +622,11 @@ and type_kind_of_yojson (json : Yojson.Safe.t) : type_kind =
   | `Assoc [("tag", `String "Ptype_abstract")] -> Ptype_abstract
   | `Assoc [("tag", `String "Ptype_variant"); ("contents", jsons)] ->
     (match jsons with
-     | `List [labels] -> Ptype_variant (constructor_declaration_of_yojson labels)
+     | `List [`List labels] -> Ptype_variant (List.map constructor_declaration_of_yojson labels)
      | _ -> failwith "Invalid JSON format for Ptype_variant")
   | `Assoc [("tag", `String "Ptype_record"); ("contents", jsons)] ->
     (match jsons with
-     | `List [labels] -> Ptype_record (label_declaration_of_yojson labels)
+     | `List [`List labels] -> Ptype_record (List.map label_declaration_of_yojson labels)
      | _ -> failwith "Invalid JSON format for Ptype_record")
   | `Assoc [("tag", `String "Ptype_open")] -> Ptype_open
   | _ -> failwith "Invalid JSON format for type_kind"
@@ -804,7 +802,7 @@ and class_type_field_desc_of_yojson (json : Yojson.Safe.t) : class_type_field_de
   | `Assoc [("tag", `String "PctfExtension"); ("contents", json)] -> Pctf_extension (extension_of_yojson json)
   | _ -> failwith "Invalid JSON format for class_type_field_desc"
 
-and class_infos_of_yojson (json : Yojson.Safe.t) : 'a class_infos =
+and class_infos_of_yojson (f : Yojson.Safe.t -> 'a) (json : Yojson.Safe.t) : 'a class_infos=
   match json with
   | `Assoc fields ->
     {
@@ -818,7 +816,7 @@ and class_infos_of_yojson (json : Yojson.Safe.t) : 'a class_infos =
         | _ -> failwith "Invalid JSON format for pci_params"
       ));
       pci_name = Yojson.Safe.Util.(`Assoc fields |> member "pciName" |> (fun x -> Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) x));
-      pci_expr = Yojson.Safe.Util.(`Assoc fields |> member "pciExpr" |> class_expr_of_yojson); (** TODO : Special type function **)
+      pci_expr = Yojson.Safe.Util.(`Assoc fields |> member "pciExpr" |> f);
       pci_loc = Yojson.Safe.Util.(`Assoc fields |> member "pciLoc" |> Location_deserializer.t_of_yojson);
       pci_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pciAttributes" |> attributes_of_yojson);
     }
@@ -917,7 +915,7 @@ and class_field_of_yojson (json : Yojson.Safe.t) : class_field =
 
 and class_field_desc_of_yojson (json : Yojson.Safe.t) : class_field_desc =
   match json with
-  | `Assoc [("tag", `String "PcfInherit"); ("contents", jsons)] -> Pcf_inherit ()
+  | `Assoc [("tag", `String "PcfInherit"); ("contents", _jsons)] -> Pcf_inherit ()
   | `Assoc [("tag", `String "PcfVal"); ("contents", jsons)] ->
     (match jsons with
      | `List [loc; mutable_flag; cf] ->
@@ -1044,6 +1042,19 @@ and module_declaration_of_yojson (jsons : Yojson.Safe.t) : module_declaration =
     } 
   | _ -> failwith "Invalid JSON for structure_item"
 
+and module_type_declaration_of_yojson (json : Yojson.Safe.t) : module_type_declaration =
+  match json with
+  | `Assoc fields -> 
+    {
+      pmtd_name = Yojson.Safe.Util.(`Assoc fields |> member "pmtdName" |> (fun x -> Asttypes_deserializer.loc_of_yojson Yojson.Safe.Util.to_string x));
+      pmtd_type = Yojson.Safe.Util.(`Assoc fields |> member "pmtdType" |> (fun x -> match x with
+                                                                          | `Null -> None
+                                                                          | _ -> Some (module_type_of_yojson x)));
+      pmtd_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pmtdAttributes" |> attributes_of_yojson);
+      pmtd_loc = Yojson.Safe.Util.(`Assoc fields |> member "pmtdLoc" |> Location_deserializer.t_of_yojson);
+    }
+  | _ -> failwith "Invalid JSON for module_type_declaration"
+
 and open_description_of_yojson (jsons : Yojson.Safe.t) : open_description = 
   match jsons with
   | `Assoc fields -> 
@@ -1057,8 +1068,19 @@ and open_description_of_yojson (jsons : Yojson.Safe.t) : open_description =
 
 
 (* TODO SPECIAL TYPE FUNCTION *)
-and include_infos_of_yojson_module_type (f : Yojson.Safe.t -> 'a) (jsons : Yojson.Safe.t) : 'a include_infos =
-  match jsons with
+and include_infos_of_yojson_module_type (f : Yojson.Safe.t -> module_type) (json : Yojson.Safe.t) : module_type include_infos =
+  match json with
+  | `Assoc fields -> 
+    {
+      pincl_mod = f (Yojson.Safe.Util.(`Assoc fields |> member "pinclMod"));
+      pincl_loc = Yojson.Safe.Util.(`Assoc fields |> member "pinclLoc" |> Location_deserializer.t_of_yojson);
+      pincl_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pinclAttributes" |> attributes_of_yojson);
+    } 
+  | _ -> failwith "Invalid JSON for include_infos"
+
+
+and include_infos_of_yojson_module_exp (f : Yojson.Safe.t -> module_expr) (json : Yojson.Safe.t) : module_expr include_infos =
+  match json with
   | `Assoc fields -> 
     {
       pincl_mod = f (Yojson.Safe.Util.(`Assoc fields |> member "pinclMod"));
@@ -1070,12 +1092,11 @@ and include_infos_of_yojson_module_type (f : Yojson.Safe.t -> 'a) (jsons : Yojso
 (* TODO SPCIAL TYPE FUNCTION *)
 
 
-
 and include_description_of_yojson (jsons : Yojson.Safe.t) : include_description = 
   include_infos_of_yojson_module_type module_type_of_yojson jsons
 
 and include_declaration_of_yojson (jsons :  Yojson.Safe.t) :include_declaration =
-  include_infos_of_yojson_module_expr module_expr_of_yojson jsons
+  include_infos_of_yojson_module_exp module_expr_of_yojson jsons
   
 and with_constraint_of_yojson (jsons : Yojson.Safe.t) : with_constraint = 
   match jsons with
@@ -1175,7 +1196,7 @@ and structure_item_desc_of_yojson (jsons : Yojson.Safe.t) : structure_item_desc 
     | _ -> failwith "Invalid JSON for structure_item_desc")
   | `Assoc [("tag", `String "PstrValue"); ("contents", jsons)] -> 
     (match jsons with
-    | `List [rf; vbs] -> Pstr_value (Asttypes_deserializer.rec_flag_of_yojson rf, List.map value_binding_of_yojson vbs)
+    | `List [rf; `List vbs] -> Pstr_value (Asttypes_deserializer.rec_flag_of_yojson rf, List.map value_binding_of_yojson vbs)
     | _ -> failwith "Invalid JSON for structure_item_desc")
   | `Assoc [("tag", `String "PstrPrimitive"); ("contents", jsons)] -> Pstr_primitive (value_description_of_yojson jsons)
   | `Assoc [("tag", `String "PstrType"); ("contents", jsons)] -> 
@@ -1191,8 +1212,9 @@ and structure_item_desc_of_yojson (jsons : Yojson.Safe.t) : structure_item_desc 
   | `Assoc [("tag", `String "PstrRecModule"); ("contents", `List jsons)] -> Pstr_recmodule (List.map module_binding_of_yojson jsons)
   | `Assoc [("tag", `String "PstrModType"); ("contents", jsons)] -> Pstr_modtype (module_type_declaration_of_yojson jsons)
   | `Assoc [("tag", `String "PstrOpen"); ("contents", jsons)] -> Pstr_open (open_description_of_yojson jsons)
-  | `Assoc [("tag", `String "PstrClass"); ("contents", jsons)] -> Pstr_class ()
+  | `Assoc [("tag", `String "PstrClass"); ("contents", _jsons)] -> Pstr_class ()
   | `Assoc [("tag", `String "PstrClassType"); ("contents", `List jsons)] -> Pstr_class_type (List.map class_type_declaration_of_yojson jsons)
+  | `Assoc [("tag", `String "PstrInclude"); ("contents", jsons)] -> Pstr_include (include_declaration_of_yojson jsons)
   | `Assoc [("tag", `String "PstrAttribute"); ("contents", jsons)] -> Pstr_attribute (attribute_of_yojson jsons)
   | `Assoc [("tag", `String "PstrExtension"); ("contents", jsons)] -> 
     (match jsons with
