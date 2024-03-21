@@ -5,8 +5,17 @@ use parsetree::purescript::types::Module;
 use std::fs::File;
 use std::io::BufReader;
 use serde_json;
+use serde::{Serialize, Deserialize};
 
 
+
+#[derive(Debug, PartialEq,  PartialOrd)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
+enum Test1 {
+    Cons1(i32),
+    Cons2(i64)
+}
 
 fn main() {
     println!("Hello, world!");
@@ -23,6 +32,13 @@ fn main() {
     let reader = BufReader::new(file);
 
     let data: Module<Vec<i64>> = serde_json::from_reader(reader).expect("Failed to deserialize JSON");
+
+    let data2: Vec<Test1> = vec![Test1::Cons1(32), Test1::Cons2(23)];
+    // Serialize the `data2` variable to a JSON string
+    let serialized_data = serde_json::to_string(&data2).expect("Failed to serialize data");
+
+    // Print the serialized JSON string to see the contents
+    println!("Serialized data2: {}", serialized_data);
 
     purescript_function();
     rescript_function();

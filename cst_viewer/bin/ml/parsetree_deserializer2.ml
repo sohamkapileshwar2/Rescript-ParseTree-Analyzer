@@ -73,12 +73,16 @@ and payload_of_yojson (json : Yojson.Safe.t) : payload =
 
 and core_type_of_yojson (json : Yojson.Safe.t) : core_type =
   match json with
-  | `Assoc fields ->
-    {
-      ptyp_desc = Yojson.Safe.Util.(`Assoc fields |> member "ptypDesc" |> core_type_desc_of_yojson);
-      ptyp_loc = Yojson.Safe.Util.(`Assoc fields |> member "ptypLoc" |> Location_deserializer.t_of_yojson);
-      ptyp_attributes = Yojson.Safe.Util.(`Assoc fields |> member "ptypAttributes" |> attributes_of_yojson);
-    }
+  | `Assoc _ ->
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "CoreType" ->
+      {
+        ptyp_desc = Yojson.Safe.Util.member "ptypDesc" json |> core_type_desc_of_yojson;
+        ptyp_loc = Yojson.Safe.Util.member "ptypLoc" json |> Location_deserializer.t_of_yojson;
+        ptyp_attributes = Yojson.Safe.Util.member "ptypAttributes" json |> attributes_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON format for core_type: missing or incorrect 'tag' field"
+    end
   | _ -> failwith "Invalid JSON format for core_type"
 
 and core_type_desc_of_yojson (json : Yojson.Safe.t) : core_type_desc = 
@@ -202,13 +206,18 @@ and object_field_of_yojson (json : Yojson.Safe.t) : object_field =
 
 and pattern_of_yojson (json : Yojson.Safe.t) : pattern =
   match json with
-  | `Assoc fields ->
-    {
-      ppat_desc = Yojson.Safe.Util.(`Assoc fields |> member "ppatDesc" |> pattern_desc_of_yojson);
-      ppat_loc = Yojson.Safe.Util.(`Assoc fields |> member "ppatLoc" |> Location_deserializer.t_of_yojson);
-      ppat_attributes = Yojson.Safe.Util.(`Assoc fields |> member "ppatAttributes" |> attributes_of_yojson);
-    }
+  | `Assoc _ ->
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "Pattern" ->
+      {
+        ppat_desc = Yojson.Safe.Util.member "ppatDesc" json |> pattern_desc_of_yojson;
+        ppat_loc = Yojson.Safe.Util.member "ppatLoc" json |> Location_deserializer.t_of_yojson;
+        ppat_attributes = Yojson.Safe.Util.member "ppatAttributes" json |> attributes_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON format for pattern: missing or incorrect 'tag' field"
+    end
   | _ -> failwith "Invalid JSON format for pattern"
+
 
 and pattern_desc_of_yojson (json : Yojson.Safe.t) : pattern_desc =
   match json with
@@ -303,12 +312,16 @@ and pattern_desc_of_yojson (json : Yojson.Safe.t) : pattern_desc =
 
 and expression_of_yojson (json : Yojson.Safe.t) : expression =
   match json with
-  | `Assoc fields ->
-    {
-      pexp_desc = Yojson.Safe.Util.(`Assoc fields |> member "pexpDesc" |> expression_desc_of_yojson);
-      pexp_loc = Yojson.Safe.Util.(`Assoc fields |> member "pexpLoc" |> Location_deserializer.t_of_yojson);
-      pexp_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pexpAttributes" |> attributes_of_yojson);
-    }
+  | `Assoc _ ->
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "Expression" ->
+      {
+        pexp_desc = Yojson.Safe.Util.member "pexpDesc" json |> expression_desc_of_yojson;
+        pexp_loc = Yojson.Safe.Util.member "pexpLoc" json |> Location_deserializer.t_of_yojson;
+        pexp_attributes = Yojson.Safe.Util.member "pexpAttributes" json |> attributes_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON format for expression: missing or incorrect 'tag' field"
+    end
   | _ -> failwith "Invalid JSON format for expression"
 
 and expression_desc_of_yojson (json : Yojson.Safe.t) : expression_desc = 
@@ -560,62 +573,76 @@ and expression_desc_of_yojson (json : Yojson.Safe.t) : expression_desc =
 
 and case_of_yojson (json : Yojson.Safe.t) : case =
   match json with
-  | `Assoc fields ->
-    {
-      pc_lhs = Yojson.Safe.Util.(`Assoc fields |> member "pcLhs" |> pattern_of_yojson);
-      pc_guard = Yojson.Safe.Util.(`Assoc fields |> member "pcGuard" |> (fun x -> match x with
-        | `Null -> None
-        | _ -> Some (expression_of_yojson x)
-      ));
-      pc_rhs = Yojson.Safe.Util.(`Assoc fields |> member "pcRhs" |> expression_of_yojson);
-    }
+  | `Assoc _ ->
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "Case" ->
+      {
+        pc_lhs = Yojson.Safe.Util.member "pcLhs" json |> pattern_of_yojson;
+        pc_guard = Yojson.Safe.Util.member "pcGuard" json |> (fun x -> match x with
+          | `Null -> None
+          | _ -> Some (expression_of_yojson x)
+        );
+        pc_rhs = Yojson.Safe.Util.member "pcRhs" json |> expression_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON format for case: missing or incorrect 'tag' field"
+    end
   | _ -> failwith "Invalid JSON format for case"
+
 
 and value_description_of_yojson (json : Yojson.Safe.t) : value_description = 
   match json with
-  | `Assoc fields ->
-    {
-      pval_name = Yojson.Safe.Util.(`Assoc fields |> member "pvalName" |> (fun x -> Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) x));
-      pval_type = Yojson.Safe.Util.(`Assoc fields |> member "pvalType" |> core_type_of_yojson);
-      pval_prim = Yojson.Safe.Util.(`Assoc fields |> member "pvalPrim" |> (fun x -> match x with
-        | `List x -> List.map (fun x -> Yojson.Safe.Util.to_string x) x
-        | _ -> failwith "Invalid JSON format for pval_prim"
-      ));
-      pval_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pvalAttributes" |> attributes_of_yojson);
-      pval_loc = Yojson.Safe.Util.(`Assoc fields |> member "pvalLoc" |> Location_deserializer.t_of_yojson);
-    }
+  | `Assoc _ ->
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "ValueDescription" ->
+      {
+        pval_name = Yojson.Safe.Util.member "pvalName" json |> Asttypes_deserializer.loc_of_yojson Yojson.Safe.Util.to_string;
+        pval_type = Yojson.Safe.Util.member "pvalType" json |> core_type_of_yojson;
+        pval_prim = Yojson.Safe.Util.member "pvalPrim" json |> (fun x -> match x with
+          | `List x -> List.map Yojson.Safe.Util.to_string x
+          | _ -> failwith "Invalid JSON format for pval_prim"
+        );
+        pval_attributes = Yojson.Safe.Util.member "pvalAttributes" json |> attributes_of_yojson;
+        pval_loc = Yojson.Safe.Util.member "pvalLoc" json |> Location_deserializer.t_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON format for value_description: missing or incorrect 'tag' field"
+    end
   | _ -> failwith "Invalid JSON format for value_description"
 
 and type_declaration_of_yojson (json : Yojson.Safe.t) : type_declaration = 
   match json with
-  | `Assoc fields ->    
-    {
-      ptype_name = Yojson.Safe.Util.(`Assoc fields |> member "ptypeName" |> (fun x -> Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) x));
-      ptype_params = Yojson.Safe.Util.(`Assoc fields |> member "ptypeParams" |> (fun x -> match x with
-        | `List x_ -> List.map (fun y ->
-          match y with
-          | `List [t; v] -> (core_type_of_yojson t, Asttypes_deserializer.variance_of_yojson v)
+  | `Assoc _ ->    
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "TypeDeclaration" ->
+      {
+        ptype_name = Yojson.Safe.Util.member "ptypeName" json |> Asttypes_deserializer.loc_of_yojson Yojson.Safe.Util.to_string;
+        ptype_params = Yojson.Safe.Util.member "ptypeParams" json |> (fun x -> match x with
+          | `List x_ -> List.map (fun y ->
+            match y with
+            | `List [t; v] -> (core_type_of_yojson t, Asttypes_deserializer.variance_of_yojson v)
+            | _ -> failwith "Invalid JSON format for ptype_params"
+            ) x_
           | _ -> failwith "Invalid JSON format for ptype_params"
-          ) x_
-        | _ -> failwith "Invalid JSON format for ptype_params"
-      ));
-      ptype_cstrs = Yojson.Safe.Util.(`Assoc fields |> member "ptypeCstrs" |> (fun x -> match x with
-        | `List x -> List.map (fun y ->
-          match y with
-          | `List [t1; t2; l] -> (core_type_of_yojson t1, core_type_of_yojson t2, Location_deserializer.t_of_yojson l)
-          | _ -> failwith "Invalid JSON format for ptype_cstrs") x
-        | _ -> failwith "Invalid JSON format for ptype_cstrs"
-      ));
-      ptype_kind = Yojson.Safe.Util.(`Assoc fields |> member "ptypeKind" |> type_kind_of_yojson);
-      ptype_private = Yojson.Safe.Util.(`Assoc fields |> member "ptypePrivate" |> (fun x -> Asttypes_deserializer.private_flag_of_yojson x));
-      ptype_manifest = Yojson.Safe.Util.(`Assoc fields |> member "ptypeManifest" |> (fun x -> match x with
-        | `Null -> None
-        | _ -> Some (core_type_of_yojson x)
-      ));
-      ptype_attributes = Yojson.Safe.Util.(`Assoc fields |> member "ptypeAttributes" |> attributes_of_yojson);
-      ptype_loc = Yojson.Safe.Util.(`Assoc fields |> member "ptypeLoc" |> Location_deserializer.t_of_yojson);
-    }
+        );
+        ptype_cstrs = Yojson.Safe.Util.member "ptypeCstrs" json |> (fun x -> match x with
+          | `List x -> List.map (fun y ->
+            match y with
+            | `List [t1; t2; l] -> (core_type_of_yojson t1, core_type_of_yojson t2, Location_deserializer.t_of_yojson l)
+            | _ -> failwith "Invalid JSON format for ptype_cstrs") x
+          | _ -> failwith "Invalid JSON format for ptype_cstrs"
+        );
+        ptype_kind = Yojson.Safe.Util.member "ptypeKind" json |> type_kind_of_yojson;
+        ptype_private = Yojson.Safe.Util.member "ptypePrivate" json |> Asttypes_deserializer.private_flag_of_yojson;
+        ptype_manifest = Yojson.Safe.Util.member "ptypeManifest" json |> (fun x -> match x with
+          | `Null -> None
+          | _ -> Some (core_type_of_yojson x)
+        );
+        ptype_attributes = Yojson.Safe.Util.member "ptypeAttributes" json |> attributes_of_yojson;
+        ptype_loc = Yojson.Safe.Util.member "ptypeLoc" json |> Location_deserializer.t_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON format for type_declaration: missing or incorrect 'tag' field"
+    end
   | _ -> failwith "Invalid JSON format for type_declaration"
+
 
 and type_kind_of_yojson (json : Yojson.Safe.t) : type_kind = 
   match json with
@@ -633,30 +660,40 @@ and type_kind_of_yojson (json : Yojson.Safe.t) : type_kind =
 
 and label_declaration_of_yojson (json : Yojson.Safe.t) : label_declaration =
   match json with
-  | `Assoc fields -> 
-    {
-      pld_name = Yojson.Safe.Util.(`Assoc fields |> member "pldName" |> (fun x -> Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) x));
-      pld_mutable = Yojson.Safe.Util.(`Assoc fields |> member "pldMutable" |> (fun x -> Asttypes_deserializer.mutable_flag_of_yojson x));
-      pld_type = Yojson.Safe.Util.(`Assoc fields |> member "pldType" |> core_type_of_yojson);
-      pld_loc = Yojson.Safe.Util.(`Assoc fields |> member "pldLoc" |> Location_deserializer.t_of_yojson);
-      pld_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pldAttributes" |> attributes_of_yojson);
-    }
+  | `Assoc _ -> 
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "LabelDeclaration" ->
+      {
+        pld_name = Yojson.Safe.Util.member "pldName" json |> Asttypes_deserializer.loc_of_yojson Yojson.Safe.Util.to_string;
+        pld_mutable = Yojson.Safe.Util.member "pldMutable" json |> Asttypes_deserializer.mutable_flag_of_yojson;
+        pld_type = Yojson.Safe.Util.member "pldType" json |> core_type_of_yojson;
+        pld_loc = Yojson.Safe.Util.member "pldLoc" json |> Location_deserializer.t_of_yojson;
+        pld_attributes = Yojson.Safe.Util.member "pldAttributes" json |> attributes_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON format for label_declaration: missing or incorrect 'tag' field"
+    end
   | _ -> failwith "Invalid JSON format for label_declaration"
+
 
 and constructor_declaration_of_yojson (json : Yojson.Safe.t) : constructor_declaration =
   match json with
-  | `Assoc fields -> 
-    {
-      pcd_name = Yojson.Safe.Util.(`Assoc fields |> member "pcdName" |> (fun x -> Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) x));
-      pcd_args = Yojson.Safe.Util.(`Assoc fields |> member "pcdName" |> constructor_arguments_of_yojson);
-      pcd_res = Yojson.Safe.Util.(`Assoc fields |> member "pcdRes" |> (fun x -> match x with
-        | `Null -> None
-        | _ -> Some (core_type_of_yojson x)
-      ));
-      pcd_loc = Yojson.Safe.Util.(`Assoc fields |> member "pcdLoc" |> Location_deserializer.t_of_yojson);
-      pcd_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pcdAttributes" |> attributes_of_yojson);
-    }
-  | _ -> failwith "Invalid JSON format for label_declaration"
+  | `Assoc _ -> 
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "ConstructorDeclaration" ->
+      {
+        pcd_name = Yojson.Safe.Util.member "pcdName" json |> Asttypes_deserializer.loc_of_yojson Yojson.Safe.Util.to_string;
+        pcd_args = Yojson.Safe.Util.member "pcdArgs" json |> constructor_arguments_of_yojson;
+        pcd_res = Yojson.Safe.Util.member "pcdRes" json |> (fun x -> match x with
+          | `Null -> None
+          | _ -> Some (core_type_of_yojson x)
+        );
+        pcd_loc = Yojson.Safe.Util.member "pcdLoc" json |> Location_deserializer.t_of_yojson;
+        pcd_attributes = Yojson.Safe.Util.member "pcdAttributes" json |> attributes_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON format for constructor_declaration: missing or incorrect 'tag' field"
+    end
+  | _ -> failwith "Invalid JSON format for constructor_declaration"
+
 
 
 and constructor_arguments_of_yojson (json : Yojson.Safe.t) : constructor_arguments =
@@ -671,39 +708,50 @@ and constructor_arguments_of_yojson (json : Yojson.Safe.t) : constructor_argumen
      | _ -> failwith "Invalid JSON format for Pcstr_record")
   | _ -> failwith "Invalid JSON format for constructor_arguments"
 
+
 and type_extension_of_yojson (json : Yojson.Safe.t) : type_extension =
   match json with
-  | `Assoc fields ->
-    {
-      ptyext_path = Yojson.Safe.Util.(`Assoc fields |> member "ptyextPath" |> (fun x -> Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson x));
-      ptyext_params = Yojson.Safe.Util.(`Assoc fields |> member "ptyextParams" |> (fun x -> match x with
-        | `List x_ -> List.map (fun y ->
-          match y with
-          | `List [t; v] -> (core_type_of_yojson t, Asttypes_deserializer.variance_of_yojson v)
+  | `Assoc _ -> 
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "TypeExtension" ->
+      {
+        ptyext_path = Yojson.Safe.Util.member "ptyextPath" json |> Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson;
+        ptyext_params = Yojson.Safe.Util.member "ptyextParams" json |> (fun x -> match x with
+          | `List x_ -> List.map (fun y ->
+            match y with
+            | `List [t; v] -> (core_type_of_yojson t, Asttypes_deserializer.variance_of_yojson v)
+            | _ -> failwith "Invalid JSON format for ptyext_params"
+            ) x_
           | _ -> failwith "Invalid JSON format for ptyext_params"
-          ) x_
-        | _ -> failwith "Invalid JSON format for ptyext_params"
-      ));
-      ptyext_constructors = Yojson.Safe.Util.(`Assoc fields |> member "ptyextConstructors" |> (fun x -> 
-        match x with
-        | `List cons -> List.map extension_constructor_of_yojson cons
-        | _ -> failwith "Invalid JSON format for ptyext_constructors"
-        ));
-      ptyext_private = Yojson.Safe.Util.(`Assoc fields |> member "ptyextPrivate" |> (fun x -> Asttypes_deserializer.private_flag_of_yojson x));
-      ptyext_attributes = Yojson.Safe.Util.(`Assoc fields |> member "ptyextAttributes" |> attributes_of_yojson);
-    }
+        );
+        ptyext_constructors = Yojson.Safe.Util.member "ptyextConstructors" json |> (fun x -> 
+          match x with
+          | `List cons -> List.map extension_constructor_of_yojson cons
+          | _ -> failwith "Invalid JSON format for ptyext_constructors"
+        );
+        ptyext_private = Yojson.Safe.Util.member "ptyextPrivate" json |> Asttypes_deserializer.private_flag_of_yojson;
+        ptyext_attributes = Yojson.Safe.Util.member "ptyextAttributes" json |> attributes_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON format for type_extension: missing or incorrect 'tag' field"
+    end
   | _ -> failwith "Invalid JSON format for type_extension"
+
 
 and extension_constructor_of_yojson (json : Yojson.Safe.t) : extension_constructor =
   match json with
-  | `Assoc fields ->
-    {
-      pext_name = Yojson.Safe.Util.(`Assoc fields |> member "pextName" |> (fun x -> Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) x));
-      pext_kind = Yojson.Safe.Util.(`Assoc fields |> member "pextKind" |> extension_constructor_kind_of_yojson);
-      pext_loc = Yojson.Safe.Util.(`Assoc fields |> member "pextLoc" |> Location_deserializer.t_of_yojson);
-      pext_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pextAttributes" |> attributes_of_yojson);
-    }
+  | `Assoc _ -> 
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "ExtensionConstructor" ->
+      {
+        pext_name = Yojson.Safe.Util.member "pextName" json |> Asttypes_deserializer.loc_of_yojson Yojson.Safe.Util.to_string;
+        pext_kind = Yojson.Safe.Util.member "pextKind" json |> extension_constructor_kind_of_yojson;
+        pext_loc = Yojson.Safe.Util.member "pextLoc" json |> Location_deserializer.t_of_yojson;
+        pext_attributes = Yojson.Safe.Util.member "pextAttributes" json |> attributes_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON format for extension_constructor: missing or incorrect 'tag' field"
+    end
   | _ -> failwith "Invalid JSON format for extension_constructor"
+
 
 and extension_constructor_kind_of_yojson (json : Yojson.Safe.t) : extension_constructor_kind =
   match json with
@@ -719,12 +767,16 @@ and extension_constructor_kind_of_yojson (json : Yojson.Safe.t) : extension_cons
 
 and class_type_of_yojson (json : Yojson.Safe.t) : class_type =
   match json with
-  | `Assoc fields ->
-    {
-      pcty_desc = Yojson.Safe.Util.(`Assoc fields |> member "pctyDesc" |> class_type_desc_of_yojson);
-      pcty_loc = Yojson.Safe.Util.(`Assoc fields |> member "pctyLoc" |> Location_deserializer.t_of_yojson);
-      pcty_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pctyAttributes" |> attributes_of_yojson);
-    }
+  | `Assoc _ -> 
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "ClassType" ->
+      {
+        pcty_desc = Yojson.Safe.Util.member "pctyDesc" json |> class_type_desc_of_yojson;
+        pcty_loc = Yojson.Safe.Util.member "pctyLoc" json |> Location_deserializer.t_of_yojson;
+        pcty_attributes = Yojson.Safe.Util.member "pctyAttributes" json |> attributes_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON format for class_type: missing or incorrect 'tag' field"
+    end
   | _ -> failwith "Invalid JSON format for class_type"
 
 and class_type_desc_of_yojson (json : Yojson.Safe.t) : class_type_desc =
@@ -750,25 +802,35 @@ and class_type_desc_of_yojson (json : Yojson.Safe.t) : class_type_desc =
 
 and class_signature_of_yojson (json : Yojson.Safe.t) : class_signature =
   match json with
-  | `Assoc fields ->
-    {
-      pcsig_self = Yojson.Safe.Util.(`Assoc fields |> member "pcsigSelf" |> core_type_of_yojson);
-      pcsig_fields = Yojson.Safe.Util.(`Assoc fields |> member "pcsigFields" |> (fun x -> match x with
-        | `List x -> List.map class_type_field_of_yojson x
-        | _ -> failwith "Invalid JSON format for pcsig_fields"
-      ));
-    }
+  | `Assoc _ -> 
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "ClassSignature" ->
+      {
+        pcsig_self = Yojson.Safe.Util.member "pcsigSelf" json |> core_type_of_yojson;
+        pcsig_fields = Yojson.Safe.Util.member "pcsigFields" json |> (fun x -> match x with
+          | `List x -> List.map class_type_field_of_yojson x
+          | _ -> failwith "Invalid JSON format for pcsig_fields"
+        );
+      }
+    | _ -> failwith "Invalid JSON format for class_signature: missing or incorrect 'tag' field"
+    end
   | _ -> failwith "Invalid JSON format for class_signature"
+
 
 and class_type_field_of_yojson (json : Yojson.Safe.t) : class_type_field =
   match json with
-  | `Assoc fields ->
-    {
-      pctf_desc = Yojson.Safe.Util.(`Assoc fields |> member "pctfDesc" |> class_type_field_desc_of_yojson);
-      pctf_loc = Yojson.Safe.Util.(`Assoc fields |> member "pctfLoc" |> Location_deserializer.t_of_yojson);
-      pctf_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pctfAttributes" |> attributes_of_yojson);
-    }
+  | `Assoc _ -> 
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "ClassTypeField" ->
+      {
+        pctf_desc = Yojson.Safe.Util.member "pctfDesc" json |> class_type_field_desc_of_yojson;
+        pctf_loc = Yojson.Safe.Util.member "pctfLoc" json |> Location_deserializer.t_of_yojson;
+        pctf_attributes = Yojson.Safe.Util.member "pctfAttributes" json |> attributes_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON format for class_type_field: missing or incorrect 'tag' field"
+    end
   | _ -> failwith "Invalid JSON format for class_type_field"
+
 
 and class_type_field_desc_of_yojson (json : Yojson.Safe.t) : class_type_field_desc =
   match json with
@@ -802,37 +864,46 @@ and class_type_field_desc_of_yojson (json : Yojson.Safe.t) : class_type_field_de
   | `Assoc [("tag", `String "PctfExtension"); ("contents", json)] -> Pctf_extension (extension_of_yojson json)
   | _ -> failwith "Invalid JSON format for class_type_field_desc"
 
-and class_infos_of_yojson (f : Yojson.Safe.t -> 'a) (json : Yojson.Safe.t) : 'a class_infos=
+and class_infos_of_yojson (f : Yojson.Safe.t -> 'a) (json : Yojson.Safe.t) : 'a class_infos =
   match json with
-  | `Assoc fields ->
-    {
-      pci_virt = Yojson.Safe.Util.(`Assoc fields |> member "pciVirt" |> (fun x -> Asttypes_deserializer.virtual_flag_of_yojson x));
-      pci_params = Yojson.Safe.Util.(`Assoc fields |> member "pciParams" |> (fun x -> match x with
-        | `List x_ -> List.map (fun y ->
-          match y with
-          | `List [t; v] -> (core_type_of_yojson t, Asttypes_deserializer.variance_of_yojson v)
+  | `Assoc _ -> 
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "ClassInfos" ->
+      {
+        pci_virt = Yojson.Safe.Util.member "pciVirt" json |> Asttypes_deserializer.virtual_flag_of_yojson;
+        pci_params = Yojson.Safe.Util.member "pciParams" json |> (fun x -> match x with
+          | `List x_ -> List.map (fun y ->
+            match y with
+            | `List [t; v] -> (core_type_of_yojson t, Asttypes_deserializer.variance_of_yojson v)
+            | _ -> failwith "Invalid JSON format for pci_params"
+            ) x_
           | _ -> failwith "Invalid JSON format for pci_params"
-          ) x_
-        | _ -> failwith "Invalid JSON format for pci_params"
-      ));
-      pci_name = Yojson.Safe.Util.(`Assoc fields |> member "pciName" |> (fun x -> Asttypes_deserializer.loc_of_yojson (fun x -> Yojson.Safe.Util.to_string x) x));
-      pci_expr = Yojson.Safe.Util.(`Assoc fields |> member "pciExpr" |> f);
-      pci_loc = Yojson.Safe.Util.(`Assoc fields |> member "pciLoc" |> Location_deserializer.t_of_yojson);
-      pci_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pciAttributes" |> attributes_of_yojson);
-    }
+        );
+        pci_name = Yojson.Safe.Util.member "pciName" json |> Asttypes_deserializer.loc_of_yojson Yojson.Safe.Util.to_string;
+        pci_expr = Yojson.Safe.Util.member "pciExpr" json |> f;
+        pci_loc = Yojson.Safe.Util.member "pciLoc" json |> Location_deserializer.t_of_yojson;
+        pci_attributes = Yojson.Safe.Util.member "pciAttributes" json |> attributes_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON format for class_infos: missing or incorrect 'tag' field"
+    end
   | _ -> failwith "Invalid JSON format for class_infos"
 
 and class_type_declaration_of_yojson (json : Yojson.Safe.t) : class_type_declaration = class_infos_of_yojson class_type_of_yojson json
 
 and class_expr_of_yojson (json : Yojson.Safe.t) : class_expr =
   match json with
-  | `Assoc fields ->
-    {
-      pcl_desc = Yojson.Safe.Util.(`Assoc fields |> member "pclDesc" |> class_expr_desc_of_yojson);
-      pcl_loc = Yojson.Safe.Util.(`Assoc fields |> member "pclLoc" |> Location_deserializer.t_of_yojson);
-      pcl_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pclAttributes" |> attributes_of_yojson);
-    }
+  | `Assoc _ -> 
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "ClassExpr" ->
+      {
+        pcl_desc = Yojson.Safe.Util.member "pclDesc" json |> class_expr_desc_of_yojson;
+        pcl_loc = Yojson.Safe.Util.member "pclLoc" json |> Location_deserializer.t_of_yojson;
+        pcl_attributes = Yojson.Safe.Util.member "pclAttributes" json |> attributes_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON format for class_expr: missing or incorrect 'tag' field"
+    end
   | _ -> failwith "Invalid JSON format for class_expr"
+
 
 and class_expr_desc_of_yojson (json : Yojson.Safe.t) : class_expr_desc =
   match json with
@@ -893,24 +964,33 @@ and class_expr_desc_of_yojson (json : Yojson.Safe.t) : class_expr_desc =
 
 and class_structure_of_yojson (json : Yojson.Safe.t) : class_structure =
   match json with
-  | `Assoc fields ->
-    {
-      pcstr_self = Yojson.Safe.Util.(`Assoc fields |> member "pcstrSelf" |> pattern_of_yojson);
-      pcstr_fields = Yojson.Safe.Util.(`Assoc fields |> member "pcstrFields" |> (fun x -> match x with
-        | `List x -> List.map class_field_of_yojson x
-        | _ -> failwith "Invalid JSON format for pcstr_fields"
-      ));
-    }
+  | `Assoc _ -> 
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "ClassStructure" ->
+      {
+        pcstr_self = Yojson.Safe.Util.member "pcstrSelf" json |> pattern_of_yojson;
+        pcstr_fields = Yojson.Safe.Util.member "pcstrFields" json |> (fun x -> match x with
+          | `List x -> List.map class_field_of_yojson x
+          | _ -> failwith "Invalid JSON format for pcstr_fields"
+        );
+      }
+    | _ -> failwith "Invalid JSON format for class_structure: missing or incorrect 'tag' field"
+    end
   | _ -> failwith "Invalid JSON format for class_structure"
+
 
 and class_field_of_yojson (json : Yojson.Safe.t) : class_field =
   match json with
-  | `Assoc fields ->
-    {
-      pcf_desc = Yojson.Safe.Util.(`Assoc fields |> member "pcfDesc" |> class_field_desc_of_yojson);
-      pcf_loc = Yojson.Safe.Util.(`Assoc fields |> member "pcfLoc" |> Location_deserializer.t_of_yojson);
-      pcf_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pcfAttributes" |> attributes_of_yojson);
-    }
+  | `Assoc _ -> 
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "ClassField" ->
+      {
+        pcf_desc = Yojson.Safe.Util.member "pcfDesc" json |> class_field_desc_of_yojson;
+        pcf_loc = Yojson.Safe.Util.member "pcfLoc" json |> Location_deserializer.t_of_yojson;
+        pcf_attributes = Yojson.Safe.Util.member "pcfAttributes" json |> attributes_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON format for class_field: missing or incorrect 'tag' field"
+    end
   | _ -> failwith "Invalid JSON format for class_field"
 
 and class_field_desc_of_yojson (json : Yojson.Safe.t) : class_field_desc =
@@ -954,15 +1034,20 @@ and class_field_kind_of_yojson (jsons : Yojson.Safe.t) : class_field_kind =
      | _ -> failwith "Invalid JSON format for Pcf_constraint")
   | _ -> failwith "Invalid JSON format for class_field_kind"
 
-and module_type_of_yojson (jsons : Yojson.Safe.t) : module_type = 
-  match jsons with
-  | `Assoc fields -> 
-    {
-      pmty_desc = Yojson.Safe.Util.(`Assoc fields |> member "pmtyDesc" |> module_type_desc_of_yojson);
-      pmty_loc = Yojson.Safe.Util.(`Assoc fields |> member "pmtyLoc" |> Location_deserializer.t_of_yojson);
-      pmty_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pmtyLoc" |> attributes_of_yojson);
-    }
+and module_type_of_yojson (json : Yojson.Safe.t) : module_type = 
+  match json with
+  | `Assoc _ -> 
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "ModuleType" ->
+      {
+        pmty_desc = Yojson.Safe.Util.member "pmtyDesc" json |> module_type_desc_of_yojson;
+        pmty_loc = Yojson.Safe.Util.member "pmtyLoc" json |> Location_deserializer.t_of_yojson;
+        pmty_attributes = Yojson.Safe.Util.member "pmtyAttributes" json |> attributes_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON format for module_type: missing or incorrect 'tag' field"
+    end
   | _ -> failwith "Invalid JSON format for module_type"
+
 
 and module_type_desc_of_yojson (jsons : Yojson.Safe.t) : module_type_desc = 
   match jsons with
@@ -995,14 +1080,19 @@ and signature_of_yojson (jsons : Yojson.Safe.t) : signature =
   | `List x -> List.map signature_item_of_yojson x
   | _ -> failwith "Invalid JSON for structure"
 
-and signature_item_of_yojson (jsons : Yojson.Safe.t) : signature_item = 
-  match jsons with
-  | `Assoc fields -> 
-    {
-      psig_desc = Yojson.Safe.Util.(`Assoc fields |> member "psigDesc" |> signature_item_desc_of_yojson);
-      psig_loc = Yojson.Safe.Util.(`Assoc fields |> member "psigLoc" |> Location_deserializer.t_of_yojson);
-    } 
-  | _ -> failwith "Invalid JSON for structure_item"
+and signature_item_of_yojson (json : Yojson.Safe.t) : signature_item = 
+  match json with
+  | `Assoc _ -> 
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "SignatureItem" ->
+      {
+        psig_desc = Yojson.Safe.Util.member "psigDesc" json |> signature_item_desc_of_yojson;
+        psig_loc = Yojson.Safe.Util.member "psigLoc" json |> Location_deserializer.t_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON for signature_item: missing or incorrect 'tag' field"
+    end
+  | _ -> failwith "Invalid JSON for signature_item"
+
 
 and signature_item_desc_of_yojson (jsons : Yojson.Safe.t) : signature_item_desc =
   match jsons with
@@ -1031,62 +1121,83 @@ and signature_item_desc_of_yojson (jsons : Yojson.Safe.t) : signature_item_desc 
   | _ -> failwith "Invalid JSON for signature_item"
 
 
-and module_declaration_of_yojson (jsons : Yojson.Safe.t) : module_declaration = 
-  match jsons with
-  | `Assoc fields -> 
-    {
-      pmd_name = Yojson.Safe.Util.(`Assoc fields |> member "pmdName" |> (fun x -> Asttypes_deserializer.loc_of_yojson Yojson.Safe.Util.to_string x));
-      pmd_type = Yojson.Safe.Util.(`Assoc fields |> member "pmdType" |> module_type_of_yojson);
-      pmd_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pmdAttributes" |> attributes_of_yojson);
-      pmd_loc = Yojson.Safe.Util.(`Assoc fields |> member "pmdLoc" |> Location_deserializer.t_of_yojson);
-    } 
-  | _ -> failwith "Invalid JSON for structure_item"
+and module_declaration_of_yojson (json : Yojson.Safe.t) : module_declaration = 
+  match json with
+  | `Assoc _ -> 
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "ModuleDeclaration" ->
+      {
+        pmd_name = Yojson.Safe.Util.member "pmdName" json |> Asttypes_deserializer.loc_of_yojson Yojson.Safe.Util.to_string;
+        pmd_type = Yojson.Safe.Util.member "pmdType" json |> module_type_of_yojson;
+        pmd_attributes = Yojson.Safe.Util.member "pmdAttributes" json |> attributes_of_yojson;
+        pmd_loc = Yojson.Safe.Util.member "pmdLoc" json |> Location_deserializer.t_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON for module_declaration: missing or incorrect 'tag' field"
+    end
+  | _ -> failwith "Invalid JSON for module_declaration"
+
 
 and module_type_declaration_of_yojson (json : Yojson.Safe.t) : module_type_declaration =
   match json with
-  | `Assoc fields -> 
-    {
-      pmtd_name = Yojson.Safe.Util.(`Assoc fields |> member "pmtdName" |> (fun x -> Asttypes_deserializer.loc_of_yojson Yojson.Safe.Util.to_string x));
-      pmtd_type = Yojson.Safe.Util.(`Assoc fields |> member "pmtdType" |> (fun x -> match x with
-                                                                          | `Null -> None
-                                                                          | _ -> Some (module_type_of_yojson x)));
-      pmtd_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pmtdAttributes" |> attributes_of_yojson);
-      pmtd_loc = Yojson.Safe.Util.(`Assoc fields |> member "pmtdLoc" |> Location_deserializer.t_of_yojson);
-    }
+  | `Assoc _ -> 
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "ModuleTypeDeclaration" ->
+      {
+        pmtd_name = Yojson.Safe.Util.member "pmtdName" json |> Asttypes_deserializer.loc_of_yojson Yojson.Safe.Util.to_string;
+        pmtd_type = (match Yojson.Safe.Util.member "pmtdType" json with
+                     | `Null -> None
+                     | x -> Some (module_type_of_yojson x));
+        pmtd_attributes = Yojson.Safe.Util.member "pmtdAttributes" json |> attributes_of_yojson;
+        pmtd_loc = Yojson.Safe.Util.member "pmtdLoc" json |> Location_deserializer.t_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON for module_type_declaration: missing or incorrect 'tag' field"
+    end
   | _ -> failwith "Invalid JSON for module_type_declaration"
 
-and open_description_of_yojson (jsons : Yojson.Safe.t) : open_description = 
-  match jsons with
-  | `Assoc fields -> 
-    {
-      popen_lid = Yojson.Safe.Util.(`Assoc fields |> member "popenLid" |> (fun x -> Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson x));
-      popen_override = Yojson.Safe.Util.(`Assoc fields |> member "popenOverride" |> Asttypes_deserializer.override_flag_of_yojson);
-      popen_loc = Yojson.Safe.Util.(`Assoc fields |> member "popenLoc" |> Location_deserializer.t_of_yojson);
-      popen_attributes = Yojson.Safe.Util.(`Assoc fields |> member "popenAttributes" |> attributes_of_yojson);
-    } 
-  | _ -> failwith "Invalid JSON for open_description"
 
+and open_description_of_yojson (json : Yojson.Safe.t) : open_description = 
+  match json with
+  | `Assoc _ -> 
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "OpenDescription" ->
+      {
+        popen_lid = Yojson.Safe.Util.member "popenLid" json |> Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson;
+        popen_override = Yojson.Safe.Util.member "popenOverride" json |> Asttypes_deserializer.override_flag_of_yojson;
+        popen_loc = Yojson.Safe.Util.member "popenLoc" json |> Location_deserializer.t_of_yojson;
+        popen_attributes = Yojson.Safe.Util.member "popenAttributes" json |> attributes_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON for open_description: missing or incorrect 'tag' field"
+    end
+  | _ -> failwith "Invalid JSON for open_description"
 
 (* TODO SPECIAL TYPE FUNCTION *)
 and include_infos_of_yojson_module_type (f : Yojson.Safe.t -> module_type) (json : Yojson.Safe.t) : module_type include_infos =
   match json with
-  | `Assoc fields -> 
-    {
-      pincl_mod = f (Yojson.Safe.Util.(`Assoc fields |> member "pinclMod"));
-      pincl_loc = Yojson.Safe.Util.(`Assoc fields |> member "pinclLoc" |> Location_deserializer.t_of_yojson);
-      pincl_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pinclAttributes" |> attributes_of_yojson);
-    } 
+  | `Assoc _ -> 
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "IncludeInfos" ->
+      {
+        pincl_mod = f (Yojson.Safe.Util.member "pinclMod" json);
+        pincl_loc = Yojson.Safe.Util.member "pinclLoc" json |> Location_deserializer.t_of_yojson;
+        pincl_attributes = Yojson.Safe.Util.member "pinclAttributes" json |> attributes_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON for include_infos: missing or incorrect 'tag' field"
+    end
   | _ -> failwith "Invalid JSON for include_infos"
 
 
 and include_infos_of_yojson_module_exp (f : Yojson.Safe.t -> module_expr) (json : Yojson.Safe.t) : module_expr include_infos =
   match json with
-  | `Assoc fields -> 
-    {
-      pincl_mod = f (Yojson.Safe.Util.(`Assoc fields |> member "pinclMod"));
-      pincl_loc = Yojson.Safe.Util.(`Assoc fields |> member "pinclLoc" |> Location_deserializer.t_of_yojson);
-      pincl_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pinclAttributes" |> attributes_of_yojson);
-    } 
+  | `Assoc _ -> 
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "IncludeInfos" ->
+      {
+        pincl_mod = f (Yojson.Safe.Util.member "pinclMod" json);
+        pincl_loc = Yojson.Safe.Util.member "pinclLoc" json |> Location_deserializer.t_of_yojson;
+        pincl_attributes = Yojson.Safe.Util.member "pinclAttributes" json |> attributes_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON for include_infos: missing or incorrect 'tag' field"
+    end
   | _ -> failwith "Invalid JSON for include_infos"
 
 (* TODO SPCIAL TYPE FUNCTION *)
@@ -1131,16 +1242,20 @@ and with_constraint_of_yojson (jsons : Yojson.Safe.t) : with_constraint =
   | _ -> failwith "Invalid JSON for with_constraint"
 
 
-and module_expr_of_yojson (jsons : Yojson.Safe.t) : module_expr = 
-  match jsons with
-  | `Assoc fields -> 
-    {
-      pmod_desc = Yojson.Safe.Util.(`Assoc fields |> member "pmodDesc" |> module_expr_desc_of_yojson);
-      pmod_loc = Yojson.Safe.Util.(`Assoc fields |> member "pmodLoc" |> Location_deserializer.t_of_yojson);
-      pmod_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pmodAttributes" |> attributes_of_yojson);
-    }
-  | _ -> failwith "Invalid JSON for module_expr"
-
+  and module_expr_of_yojson (json : Yojson.Safe.t) : module_expr = 
+    match json with
+    | `Assoc _ -> 
+      begin match Yojson.Safe.Util.member "tag" json with
+      | `String "ModuleExpr" ->
+        {
+          pmod_desc = Yojson.Safe.Util.member "pmodDesc" json |> module_expr_desc_of_yojson;
+          pmod_loc = Yojson.Safe.Util.member "pmodLoc" json |> Location_deserializer.t_of_yojson;
+          pmod_attributes = Yojson.Safe.Util.member "pmodAttributes" json |> attributes_of_yojson;
+        }
+      | _ -> failwith "Invalid JSON for module_expr: missing or incorrect 'tag' field"
+      end
+    | _ -> failwith "Invalid JSON for module_expr"
+  
 and module_expr_desc_of_yojson (jsons : Yojson.Safe.t) : module_expr_desc =
   match jsons with
   | `Assoc [("tag", `String "PmodIdent"); ("contents", jsons)] -> Pmod_ident (Asttypes_deserializer.loc_of_yojson Longident_deserializer.t_of_yojson jsons)
@@ -1179,14 +1294,19 @@ and structure_of_yojson (jsons : Yojson.Safe.t) : structure =
   | `List x -> List.map structure_item_of_yojson x
   | _ -> failwith "Invalid JSON for structure"
 
-and structure_item_of_yojson (jsons : Yojson.Safe.t) : structure_item =
-  match jsons with
-  | `Assoc fields -> 
-    {
-      pstr_desc = Yojson.Safe.Util.(`Assoc fields |> member "pstrDesc" |> structure_item_desc_of_yojson);
-      pstr_loc = Yojson.Safe.Util.(`Assoc fields |> member "pstrLoc" |> Location_deserializer.t_of_yojson);
-    } 
+and structure_item_of_yojson (json : Yojson.Safe.t) : structure_item =
+  match json with
+  | `Assoc _ -> 
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "StructureItem" ->
+      {
+        pstr_desc = Yojson.Safe.Util.member "pstrDesc" json |> structure_item_desc_of_yojson;
+        pstr_loc = Yojson.Safe.Util.member "pstrLoc" json |> Location_deserializer.t_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON for structure_item: missing or incorrect 'tag' field"
+    end
   | _ -> failwith "Invalid JSON for structure_item"
+
 
 and structure_item_desc_of_yojson (jsons : Yojson.Safe.t) : structure_item_desc =
   match jsons with
@@ -1227,23 +1347,31 @@ and structure_item_desc_of_yojson (jsons : Yojson.Safe.t) : structure_item_desc 
 
 and value_binding_of_yojson (json : Yojson.Safe.t) : value_binding = 
   match json with
-  | `Assoc fields -> 
-    {
-      pvb_pat = Yojson.Safe.Util.(`Assoc fields |> member "pvbPat" |> pattern_of_yojson);
-      pvb_expr = Yojson.Safe.Util.(`Assoc fields |> member "pvbExpr" |> expression_of_yojson);
-      pvb_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pvbAttributes" |> attributes_of_yojson);
-      pvb_loc = Yojson.Safe.Util.(`Assoc fields |> member "pvbLoc" |> Location_deserializer.t_of_yojson);
-    }
+  | `Assoc _ -> 
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "ValueBinding" ->
+      {
+        pvb_pat = Yojson.Safe.Util.member "pvbPat" json |> pattern_of_yojson;
+        pvb_expr = Yojson.Safe.Util.member "pvbExpr" json |> expression_of_yojson;
+        pvb_attributes = Yojson.Safe.Util.member "pvbAttributes" json |> attributes_of_yojson;
+        pvb_loc = Yojson.Safe.Util.member "pvbLoc" json |> Location_deserializer.t_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON for value_binding: missing or incorrect 'tag' field"
+    end
   | _ -> failwith "Invalid JSON for value_binding"
 
-and module_binding_of_yojson (json : Yojson.Safe.t) : module_binding = 
-  match json with
-  | `Assoc fields -> 
-    {
-      pmb_name = Yojson.Safe.Util.(`Assoc fields |> member "pmbName" |> (fun x -> Asttypes_deserializer.loc_of_yojson Yojson.Safe.Util.to_string x));
-      pmb_expr = Yojson.Safe.Util.(`Assoc fields |> member "pmbExpr" |> module_expr_of_yojson);
-      pmb_attributes = Yojson.Safe.Util.(`Assoc fields |> member "pmbAttributes" |> attributes_of_yojson);
-      pmb_loc = Yojson.Safe.Util.(`Assoc fields |> member "pmbLoc" |> Location_deserializer.t_of_yojson);
-    }
-  | _ -> failwith "Invalid JSON for module_binding"
 
+and module_binding_of_yojson (json : Yojson.Safe.t) : module_binding =
+  match json with
+  | `Assoc _ ->
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "ModuleBinding" ->
+      {
+        pmb_name = Yojson.Safe.Util.member "pmbName" json |> Asttypes_deserializer.loc_of_yojson Yojson.Safe.Util.to_string;
+        pmb_expr = Yojson.Safe.Util.member "pmbExpr" json |> module_expr_of_yojson;
+        pmb_attributes = Yojson.Safe.Util.member "pmbAttributes" json |> attributes_of_yojson;
+        pmb_loc = Yojson.Safe.Util.member "pmbLoc" json |> Location_deserializer.t_of_yojson;
+      }
+    | _ -> failwith "Invalid JSON for module_binding: missing or incorrect 'tag' field"
+    end
+  | _ -> failwith "Invalid JSON for module_binding"

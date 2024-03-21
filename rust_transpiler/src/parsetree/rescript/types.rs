@@ -1,16 +1,20 @@
 #![allow(non_snake_case)]
-// use serde::{Serialize, Deserialize};
+use serde::{Serialize, Deserialize};
 
 
 type Structure = Vec<StructureItem>;
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct StructureItem {
     pstr_desc: StructureItemDesc, // Assuming StructureItemDesc is another type you'll define
     pstr_loc: Location,            // Assuming Location is another type you'll define
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum StructureItemDesc {
     PstrEval(Expression, Attributes),
     PstrValue(RecFlag, Vec<ValueBinding>),
@@ -24,7 +28,7 @@ enum StructureItemDesc {
     PstrOpen(OpenDescription),
     PstrClass(()), // Assuming this is a placeholder for something more specific
     PstrClassType(Vec<ClassTypeDeclaration>),
-    PstrInclude(IncludeDeclaration),
+    PstrInclude(IncludeDescription),
     PstrAttribute(Attribute),
     PstrExtension(Extension, Attributes),
 }
@@ -33,6 +37,8 @@ enum StructureItemDesc {
 // Location Types
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct Location {
     locStart: Position, // Assuming Position is another type you'll define
     locEnd: Position,
@@ -40,6 +46,8 @@ struct Location {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct Position {
     posFname: String,
     posLnum: i32,
@@ -50,6 +58,8 @@ struct Position {
 // Longident Types
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum Longident {
     Lident(String),
     Ldot(Box<Longident>, String),
@@ -59,6 +69,8 @@ enum Longident {
 // Module Types
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct ModuleBinding {
     pmbName: Loc<String>,
     pmbExpr: ModuleExpr,
@@ -67,6 +79,8 @@ struct ModuleBinding {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct ModuleExpr {
     pmodDesc: ModuleExprDesc, // Direct use, assuming you'll define or replace
     pmodLoc: Location, // Previously defined
@@ -74,6 +88,8 @@ struct ModuleExpr {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum ModuleExprDesc {
     PmodIdent(Loc<Longident>),
     PmodStructure(Structure),
@@ -85,6 +101,8 @@ enum ModuleExprDesc {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct ModuleType {
     pmtyDesc: Box<ModuleTypeDesc>, // Direct naming, assuming definition elsewhere
     pmtyLoc: Location, // Using the previously defined Location type
@@ -92,6 +110,8 @@ struct ModuleType {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum ModuleTypeDesc {
     PmtyIdent(Loc<Longident>),
     PmtySignature(Signature),
@@ -102,6 +122,8 @@ enum ModuleTypeDesc {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct ModuleDeclaration {
     pmdName: Loc<String>,
     pmdType: Option<ModuleType>,
@@ -110,6 +132,8 @@ struct ModuleDeclaration {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct ModuleTypeDeclaration {
     pmtdName: Loc<String>,
     pmtdType: Option<ModuleType>,
@@ -120,6 +144,8 @@ struct ModuleTypeDeclaration {
 // Open Desctiption
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct OpenDescription {
     popenLid: Loc<Longident>,
     popenOverride: bool,
@@ -131,6 +157,8 @@ struct OpenDescription {
 type IncludeDescription = IncludeInfos<ModuleType>;
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct IncludeInfos<T> {
     pinclMod: T,
     pinclLoc: Location,
@@ -140,6 +168,8 @@ struct IncludeInfos<T> {
 type IncludeDeclaration =  IncludeInfos<ModuleExpr>;
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum WithConstraint {
     PwithType(Loc<Longident>, TypeDeclaration),
     PwithModule(Loc<Longident>, Loc<Longident>),
@@ -152,6 +182,8 @@ enum WithConstraint {
 type ClassTypeDeclaration = ClassInfos<ClassType>;
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct ClassInfos<T> {
     pciVirt: VirtualFlag,
     pciParams: Vec<(CoreType, Variance)>,
@@ -162,12 +194,16 @@ struct ClassInfos<T> {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct ClassStructure {
     pcstrSelf: Pattern,
     pcstrFields: Vec<ClassField>,
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct ClassField {
     pcfDesc: ClassFieldDesc,
     pcfLoc: Location,
@@ -176,6 +212,8 @@ struct ClassField {
 
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum ClassFieldDesc {
     PcfInherit(()),
     PcfVal(Loc<Label>, MutableFlag, ClassFieldKind),
@@ -187,12 +225,16 @@ enum ClassFieldDesc {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum ClassFieldKind {
     CfkVirtual(CoreType),
     CfkConcrete(OverrideFlag, Expression),
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct ClassType {
     pctyDesc: Box<ClassTypeDesc>,
     pctyLoc: Location,
@@ -200,6 +242,8 @@ struct ClassType {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum ClassTypeDesc {
     PctyConstr(Loc<Longident>, Vec<CoreType>),
     PctySignature(ClassSignature),
@@ -209,12 +253,16 @@ enum ClassTypeDesc {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct ClassSignature {
     pcsigSelf: CoreType,
     pcsigFields: Vec<ClassTypeField>,
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct ClassTypeField {
     pctfDesc: ClassTypeFieldDesc,
     pctfLoc: Location,
@@ -222,6 +270,8 @@ struct ClassTypeField {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum ClassTypeFieldDesc {
     PctfInherit(ClassType),
     PctfVal(Loc<Label>, MutableFlag, CoreType),
@@ -232,6 +282,8 @@ enum ClassTypeFieldDesc {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct ClassExpr {
     pclDesc: Box<ClassExprDesc>,
     pclLoc: Location,
@@ -239,6 +291,8 @@ struct ClassExpr {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum ClassExprDesc {
     PclStructure(ClassStructure),
     PclFunctor(Loc<String>, Option<ModuleType>, ClassExpr),
@@ -251,6 +305,8 @@ enum ClassExprDesc {
 // Expression Types
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct Expression {
     pexpDesc: Box<ExpressionDesc>,
     pexpLoc: Location,
@@ -258,6 +314,8 @@ struct Expression {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum ExpressionDesc {
     PexpIdent(Loc<Longident>),
     PexpConstant(Constant),
@@ -306,6 +364,8 @@ type Attribute = (Loc<String>, Payload);
 // Payload Types
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum Payload {
     PStr(Structure),
     PSig(Signature),
@@ -317,12 +377,16 @@ enum Payload {
 type Signature = Vec<SignatureItem>;
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct SignatureItem {
     psigDesc: SignatureItemDesc,
     psigLoc: Location,
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum SignatureItemDesc {
     PsigValue(ValueDescription),
     PsigType(TypeDeclaration),
@@ -342,6 +406,8 @@ enum SignatureItemDesc {
 // Core Types
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct CoreType {
     ptypDesc: Box<CoreTypeDesc>,
     ptypLoc: Location,
@@ -349,6 +415,8 @@ struct CoreType {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum CoreTypeDesc {
     PtypAny,
     PtypVar(String),
@@ -369,20 +437,25 @@ type PackageType = (Loc<Longident>, Vec<(Loc<Longident>, CoreType)>);
 
 
 // Object Fields Types
-
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum ObjectField {
     Otag(Loc<Label>, Attributes, CoreType),
     Oinherit(CoreType),
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum RowField {
     Rtag(Loc<Label>, Attributes, bool, Vec<CoreType>),
     Rinherit(CoreType),
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct ValueBinding {
     pvbPat: Pattern,
     pvbExpr: Expression,
@@ -391,12 +464,16 @@ struct ValueBinding {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct Case {
     pcLhs: Pattern,
     pcGuard: Option<Expression>,
     pcRhs: Expression,
 }
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct Pattern {
     ppatDesc: Box<PatternDesc>,
     ppatLoc: Location,
@@ -404,6 +481,8 @@ struct Pattern {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum PatternDesc {
     PpatAny,
     PpatVar(Loc<String>),
@@ -425,10 +504,11 @@ enum PatternDesc {
     PpatOpen(Loc<Longident>, Pattern),
 }
 
-#[derive( Debug, PartialEq)]
-struct Extension(Loc<String>, Payload);
+type Extension = (Loc<String>, Payload);
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct ExtensionConstructor {
     pextName: Loc<String>,
     pextKind: ExtensionConstructorKind,
@@ -437,6 +517,8 @@ struct ExtensionConstructor {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum ExtensionConstructorKind {
     PextDecl(ConstructorArguments, Option<CoreType>),
     PextRebind(Loc<Longident>),
@@ -444,6 +526,8 @@ enum ExtensionConstructorKind {
 
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct ConstructorDeclaration {
     pcdName: Loc<String>,
     pcdArgs: ConstructorArguments,
@@ -453,12 +537,16 @@ struct ConstructorDeclaration {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum ConstructorArguments {
     PcstrTuple(Vec<CoreType>),
     PcstrRecord(Vec<(Loc<Longident>, CoreType, MutableFlag)>),
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct ValueDescription {
     pvalName: Loc<String>,
     pvalType: CoreType,
@@ -468,6 +556,8 @@ struct ValueDescription {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct TypeDeclaration {
     ptypeName: Loc<String>,
     ptypeParams: Vec<Loc<String>>,
@@ -480,6 +570,8 @@ struct TypeDeclaration {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct TypeExtension {
     ptyextPath: Loc<Longident>,
     ptyextParams: Vec<(CoreType, Variance)>,
@@ -489,6 +581,8 @@ struct TypeExtension {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum TypeKind {
     PtypeAbstract,
     PtypeVariant(Vec<ConstructorDeclaration>),
@@ -497,6 +591,8 @@ enum TypeKind {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct LabelDeclaration {
     pldName: Loc<String>,
     pldMutable: MutableFlag,
@@ -506,6 +602,8 @@ struct LabelDeclaration {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum Constant {
     PconstInteger(String, Option<char>),
     PconstChar(i32),
@@ -514,42 +612,56 @@ enum Constant {
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum RecFlag {
     Nonrecursive,
     Recursive,
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum DirectionFlag {
     Upto,
     Downto,
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum PrivateFlag {
     Private,
     Public,
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum MutableFlag {
     Immutable,
     Mutable,
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum VirtualFlag {
     Virtual,
     Concrete,
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum OverrideFlag {
     Override,
     Fresh,
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum ClosedFlag {
     Closed,
     Open,
@@ -558,6 +670,8 @@ enum ClosedFlag {
 type Label = String;
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum ArgLabel {
     Nolabel,
     Labelled(String),
@@ -566,12 +680,16 @@ enum ArgLabel {
 
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag")]
 struct Loc<T> {
     txt: T,
     loc: Location,
 }
 
 #[derive( Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "tag", content = "contents")]
 enum Variance {
     Covariant,
     Contravariant,

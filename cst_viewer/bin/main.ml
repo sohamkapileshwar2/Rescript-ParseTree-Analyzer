@@ -189,15 +189,22 @@ type test_type = {
   ptyp_attributes: string;
 }
 
+      
+
 let test_type_of_yojson (json: Yojson.Safe.t) : test_type =
   match json with
-  | `Assoc fields ->
-    {
-      ptyp_desc = Yojson.Safe.Util.(`Assoc fields |> member "ptypDesc" |> to_string);
-      ptyp_loc = Yojson.Safe.Util.(`Assoc fields |> member "ptypLoc" |> to_string);
-      ptyp_attributes = Yojson.Safe.Util.(`Assoc fields |> member "ptypAttributes" |> to_string);
-    }
+  | `Assoc _fields ->
+    begin match Yojson.Safe.Util.member "tag" json with
+    | `String "TestType" ->
+      {
+        ptyp_desc = Yojson.Safe.Util.member "ptypDesc" json |> Yojson.Safe.Util.to_string;
+        ptyp_loc = Yojson.Safe.Util.member "ptypLoc" json |> Yojson.Safe.Util.to_string;
+        ptyp_attributes = Yojson.Safe.Util.member "ptypAttributes" json |> Yojson.Safe.Util.to_string;
+      }
+    | _ -> failwith "Invalid Tag"
+    end
   | _ -> failwith "Invalid JSON"
+
 
 let test_type_to_yojson (t: test_type) : Yojson.Safe.t =
   `Assoc [
